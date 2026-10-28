@@ -22,10 +22,11 @@ const tag = (xml: string, name: string) => decode(xml.match(new RegExp(`<${name}
 
 async function list(lang: string) {
   const xml = await (await fetch(FEEDS[lang], { headers: UA, next: { revalidate: 1800 } })).text();
-  return [...xml.matchAll(/<item[\s>][\s\S]*?<\/item>/g)]
+  const items = [...xml.matchAll(/<item[\s>][\s\S]*?<\/item>/g)]
     .map(([it]) => ({ title: tag(it, 'title'), url: tag(it, 'link'), date: tag(it, 'pubDate'), summary: tag(it, 'description').replace(/<[^>]+>/g, ''), image: decode(it.match(/<(?:media:thumbnail|media:content|enclosure)[^>]*url="([^"]+)"/)?.[1] ?? '') || null }))
     .filter((i) => i.title && i.url.startsWith('http'))
     .slice(0, 8);
+  return items;
 }
 
 async function article(url: string) {

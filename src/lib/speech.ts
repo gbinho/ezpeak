@@ -15,6 +15,16 @@ function pickVoice(lang: Lang) {
   );
 }
 
+/** Utterance com a melhor voz disponível (para quem precisa de eventos como "boundary"). */
+export function makeUtterance(text: string, lang: Lang, rate = 1) {
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = VOICE_LANG[lang];
+  u.rate = rate;
+  const v = pickVoice(lang);
+  if (v) u.voice = v;
+  return u;
+}
+
 export function canSpeak() {
   return typeof window !== 'undefined' && 'speechSynthesis' in window;
 }

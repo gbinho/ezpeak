@@ -1,14 +1,15 @@
 'use client';
-import { Pause, Volume2 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { Pause, Play, Volume2, VolumeX } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { callAI } from '@/lib/ai';
 import { useApp } from '@/lib/app-context';
 import { personalDeckId, wordsToCards } from '@/lib/personal-deck';
-import { canRecognize, recognize, speak } from '@/lib/speech';
+import { canRecognize, makeUtterance, recognize, speak } from '@/lib/speech';
+import { toPt } from '@/lib/translate';
 import type { Lang } from '@/lib/types';
 import Activity from './Activity';
 
-type News = { title: string; url: string; date: string; summary: string; image: string | null };
+type News = { title: string; titlePt: string | null; url: string; date: string; summary: string; image: string | null };
 type Step = 'list' | 'read' | 'rate' | 'explain' | 'result';
 type Difficulty = 'fácil' | 'médio' | 'difícil';
 
@@ -23,11 +24,11 @@ const REASONS = [
 /** Divide em palavras clicáveis (funciona também para japonês). */
 function tokens(text: string, lang: Lang) {
   const seg = new Intl.Segmenter(lang, { granularity: 'word' });
-  return [...seg.segment(text)].map((s) => ({ t: s.segment, word: !!s.isWordLike }));
+  return [...seg.segment(text)].map((s) => ({ t: s.segment, i: s.index, word: !!s.isWordLike }));
 }
 
 export default function Reading({ lang, onBack }: { lang: Lang; onBack: () => void }) {
-  const { session, global } = useApp();
+  const { session, global, saveGlobal } = useApp();
   const [step, setStep] = useState<Step>('list');
   const [items, setItems] = useState<News[] | null>(null);
   const [news, setNews] = useState<News | null>(null);
@@ -44,7 +45,14 @@ export default function Reading({ lang, onBack }: { lang: Lang; onBack: () => vo
   const [cards, setCards] = useState<{ done: number; total: number } | null>(null);
 
   useEffect(() => {
-    fetch(`/api/news?lang=${lang}`).then((r) => r.json()).then((j) => (j.items ? setItems(j.items) : setError(j.error)));
+    fetch(`/api/news?lang=${lang}`)
+      .then((r) => r.json())
+      .then(async (j) => {
+        if (!j.items) return setError(j.error);
+        setItems(j.items);
+        const pt = await toPt(j.items.map((i: News) => i.title));
+        setItems(j.items.map((i: News, k: number) => ({ ...i, titlePt: pt[k] })));
+      });
   }, [lang]);
   useEffect(() => () => window.speechSynthesis?.cancel(), []);
 
@@ -60,18 +68,53 @@ export default function Reading({ lang, onBack }: { lang: Lang; onBack: () => vo
     if (j.image) setImage(j.image);
   }
 
-  async function listen() {
-    if (playing) {
-      window.speechSynthesis.cancel();
-      return setPlaying(false);
+  // ---------- leitor: frase por frase, com pausa e a palavra falada em destaque ----------
+  const blocks = useMemo(() => (news && paras ? [news.title, ...paras] : []), [news, paras]);
+  const sentences = useMemo(() => {
+    const seg = new Intl.Segmenter(lang, { granularity: 'sentence' });
+    return blocks.flatMap((b, p) =>
+      [...seg.segment(b)]
+        .map((s) => ({ p, start: s.index + (s.segment.length - s.segment.trimStart().length), end: s.index + s.segment.length, text: s.segment.trim() }))
+        .filter((s) => s.text),
+    );
+  }, [blocks, lang]);
+  const [cur, setCur] = useState<{ s: number; w?: [number, number] } | null>(null);
+  const [slow, setSlow] = useState(false);
+  const idx = useRef(0);
+  const run = useRef(0);
+
+  function playFrom(i: number) {
+    if (i >= sentences.length) {
+      setPlaying(false);
+      setCur(null);
+      idx.current = 0;
+      return;
     }
+    const token = run.current;
+    idx.current = i;
+    const s = sentences[i];
+    const u = makeUtterance(s.text, lang, (slow ? 0.75 : 0.95) * global.audioRate);
+    u.onboundary = (e) => {
+      if (e.name !== 'word' || token !== run.current) return;
+      const len = e.charLength || (s.text.slice(e.charIndex).search(/[\s,.;:!?、。]/) + 1 || s.text.length - e.charIndex);
+      setCur({ s: i, w: [s.start + e.charIndex, s.start + e.charIndex + len] });
+    };
+    u.onend = () => token === run.current && playFrom(i + 1);
+    setCur({ s: i });
+    window.speechSynthesis.speak(u);
+  }
+
+  function play() {
+    window.speechSynthesis.cancel();
+    run.current++;
     setPlaying(true);
     setListened(true);
-    for (const p of [news!.title, ...(paras ?? [])]) {
-      if (!window.speechSynthesis) break;
-      await speak(p, lang, global.audioRate * 0.9);
-      if (!document.hasFocus() && !window.speechSynthesis.speaking) break;
-    }
+    playFrom(idx.current);
+  }
+
+  function pause() {
+    run.current++; // invalida o "onend" da frase cancelada
+    window.speechSynthesis.cancel();
     setPlaying(false);
   }
 
@@ -79,7 +122,10 @@ export default function Reading({ lang, onBack }: { lang: Lang; onBack: () => vo
     const k = w.toLowerCase();
     const next = new Set(marked);
     if (next.has(k)) next.delete(k);
-    else next.add(k);
+    else {
+      next.add(k);
+      if (global.tapAudio && !playing) speak(w, lang, 0.85);
+    }
     setMarked(next);
   };
 
@@ -121,7 +167,8 @@ export default function Reading({ lang, onBack }: { lang: Lang; onBack: () => vo
           {items?.map((n) => (
             <button key={n.url} onClick={() => open(n)} className="flex w-full items-center gap-3 py-4 text-left">
               <span className="min-w-0 flex-1">
-                <span className="block font-semibold leading-snug">{n.title}</span>
+                <span className="block font-semibold leading-snug">{n.titlePt ?? n.title}</span>
+                {n.titlePt && <span className="block text-sm leading-snug text-muted">{n.title}</span>}
                 <span className="hint">{n.date && new Date(n.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
               </span>
               {n.image && (
@@ -134,17 +181,31 @@ export default function Reading({ lang, onBack }: { lang: Lang; onBack: () => vo
       </Activity>
     );
 
-  if (step === 'read')
+  if (step === 'read') {
+    const sent = cur ? sentences[cur.s] : null;
     return (
       <Activity
         title={marked.size ? `${marked.size} palavras grifadas` : 'Toque nas palavras que não entendeu'}
-        onBack={() => { window.speechSynthesis?.cancel(); setStep('list'); setMarked(new Set()); setListened(false); }}
+        onBack={() => { pause(); idx.current = 0; setCur(null); setStep('list'); setMarked(new Set()); setListened(false); }}
+        action={
+          <button
+            onClick={() => saveGlobal({ tapAudio: !global.tapAudio })}
+            aria-label={global.tapAudio ? 'Desligar som ao tocar na palavra' : 'Ligar som ao tocar na palavra'}
+            title={global.tapAudio ? 'Som ao tocar: ligado' : 'Som ao tocar: desligado'}
+            className={`grid h-11 w-11 place-items-center rounded-full ${global.tapAudio ? 'text-accent' : 'text-muted'}`}
+          >
+            {global.tapAudio ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
+          </button>
+        }
         footer={
           <div className="flex gap-2">
-            <button onClick={listen} className="btn-ghost shrink-0" aria-label={playing ? 'Pausar' : 'Ouvir a notícia'}>
-              {playing ? <Pause className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+            <button onClick={playing ? pause : play} disabled={!paras} className="btn-ghost shrink-0" aria-label={playing ? 'Pausar leitura' : 'Ouvir a notícia'}>
+              {playing ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
             </button>
-            <button className="btn-primary flex-1" disabled={!paras} onClick={() => { window.speechSynthesis?.cancel(); setPlaying(false); setStep('rate'); }}>Terminei</button>
+            <button onClick={() => { setSlow(!slow); if (playing) { pause(); setTimeout(play, 50); } }} className={`btn-ghost shrink-0 px-3 text-sm tabular-nums ${slow ? 'text-accent' : ''}`} aria-label="Velocidade">
+              {slow ? '0.75×' : '1×'}
+            </button>
+            <button className="btn-primary flex-1" disabled={!paras} onClick={() => { pause(); setStep('rate'); }}>Terminei</button>
           </div>
         }
       >
@@ -154,21 +215,26 @@ export default function Reading({ lang, onBack }: { lang: Lang; onBack: () => vo
             <img src={image} alt="" className="aspect-video w-full rounded-xl bg-surface-2 object-cover" />
           )}
           {!paras && <p className="text-muted">Carregando a notícia…</p>}
-          {paras && [news!.title, ...paras].map((p, i) => (
+          {blocks.map((p, i) => (
             <p key={i} className={i === 0 ? 'font-display text-2xl font-bold leading-tight' : ''}>
-              {tokens(p, lang).map((tk, j) =>
-                tk.word ? (
-                  <span key={j} onClick={() => toggle(tk.t)} className={`cursor-pointer rounded-sm transition ${marked.has(tk.t.toLowerCase()) ? 'bg-warn/40' : 'hover:bg-surface-2'}`}>{tk.t}</span>
+              {i === 0 && news?.titlePt && <span className="mb-1 block font-sans text-sm font-normal text-muted">{news.titlePt}</span>}
+              {tokens(p, lang).map((tk, j) => {
+                const inSentence = sent && sent.p === i && tk.i >= sent.start && tk.i < sent.end;
+                const spoken = inSentence && cur?.w && tk.word && tk.i >= cur.w[0] && tk.i < cur.w[1];
+                const cls = spoken ? 'bg-accent text-accent-ink' : marked.has(tk.t.toLowerCase()) ? 'bg-warn/40' : inSentence ? 'bg-accent-soft' : '';
+                return tk.word ? (
+                  <span key={j} onClick={() => toggle(tk.t)} className={`cursor-pointer rounded-sm transition-colors ${cls || 'hover:bg-surface-2'}`}>{tk.t}</span>
                 ) : (
-                  <span key={j}>{tk.t}</span>
-                ),
-              )}
+                  <span key={j} className={inSentence ? 'bg-accent-soft' : ''}>{tk.t}</span>
+                );
+              })}
             </p>
           ))}
           {news && <a href={news.url} target="_blank" rel="noreferrer" className="block text-xs text-muted underline">Fonte original</a>}
         </article>
       </Activity>
     );
+  }
 
   if (step === 'rate')
     return (

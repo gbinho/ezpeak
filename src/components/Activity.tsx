@@ -14,7 +14,7 @@ export function BackIcon() {
  * Tela de atividade em foco: só título, voltar e a atividade.
  * `footer` fica preso embaixo, na zona do polegar.
  */
-export default function Activity({ title, onBack, children, footer }: { title: string; onBack: () => void; children: React.ReactNode; footer?: React.ReactNode }) {
+export default function Activity({ title, onBack, children, footer, action }: { title: string; onBack: () => void; children: React.ReactNode; footer?: React.ReactNode; action?: React.ReactNode }) {
   const { setFocus } = useApp();
   useEffect(() => {
     setFocus(true);
@@ -27,7 +27,8 @@ export default function Activity({ title, onBack, children, footer }: { title: s
         <button onClick={onBack} aria-label="Voltar" className="grid h-11 w-11 place-items-center rounded-full text-muted transition hover:bg-surface-2 hover:text-ink">
           <BackIcon />
         </button>
-        <h1 className="text-sm font-semibold tracking-wide text-muted">{title}</h1>
+        <h1 className="min-w-0 flex-1 truncate text-sm font-semibold tracking-wide text-muted">{title}</h1>
+        {action}
       </header>
       <div className="flex flex-1 flex-col overflow-y-auto px-4 pb-4">{children}</div>
       {footer && <div className="shrink-0 space-y-3 border-t border-line bg-bg px-4 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))]">{footer}</div>}

@@ -25,6 +25,8 @@ export type Settings = {
   typeAnswer: boolean;
   // Exibição
   audioOn: boolean;
+  /** Ler em voz alta a palavra tocada na leitura de notícias. */
+  tapAudio: boolean;
   autoplay: 'front' | 'back' | 'never';
   audioRate: number;
   crutch: 'auto' | 'always' | 'tap' | 'never';
@@ -78,6 +80,7 @@ export const DEFAULTS: GlobalSettings = {
   disabledDecks: [],
   onboarded: false,
   audioOn: true,
+  tapAudio: true,
   newPerDay: 10,
   maxReviewsPerDay: 150,
   newOrder: 'sequential',
