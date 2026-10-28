@@ -1,4 +1,5 @@
 'use client';
+import { CalendarDays, Languages as LanguagesIcon, Layers, Mic, Repeat, Target, Timer, TriangleAlert, UserRound, Volume2, type LucideIcon } from 'lucide-react';
 import { useState } from 'react';
 import Activity from '@/components/Activity';
 import Goal from '@/components/Goal';
@@ -10,17 +11,17 @@ import { supabase } from '@/lib/supabase';
 import { CARD_TYPES, type Lang } from '@/lib/types';
 
 // Cada seção abre sua própria tela. `form` = título do grupo no SettingsForm.
-const SECTIONS: { id: string; title: string; form?: string; summary: (g: GlobalSettings) => string }[] = [
-  { id: 'langs', title: 'Idiomas e nível', summary: (g) => g.languages.map((l) => LANG_LABEL[l].split(' ')[1]).join(', ') },
-  { id: 'goal', title: 'Objetivo', summary: (g) => g.goals[g.language] ?? 'B1' },
-  { id: 'pace', title: 'Ritmo diário', form: 'Ritmo diário', summary: (g) => `${g.newPerDay} novos por dia` },
-  { id: 'freq', title: 'Frequência dos cards', form: 'Frequência dos cards', summary: (g) => `Retenção ${Math.round(g.retention * 100)}%` },
-  { id: 'types', title: 'Tipos de card', form: 'Tipos de card', summary: (g) => `${CARD_TYPES.filter((t) => g.cardTypes[t]).length} ativos` },
-  { id: 'hard', title: 'Cards difíceis', form: 'Cards difíceis', summary: (g) => `Após ${g.leechThreshold} erros` },
-  { id: 'display', title: 'Exibição e áudio', form: 'Exibição e áudio', summary: (g) => (g.audioOn ? 'Áudio ligado' : 'Áudio desligado') },
-  { id: 'session', title: 'Sessão', form: 'Sessão', summary: (g) => (g.sessionMode === 'count' ? `${g.sessionSize} cards` : `${g.sessionMinutes} min`) },
-  { id: 'pron', title: 'Avaliação de pronúncia', form: 'Avaliação de pronúncia', summary: (g) => (g.autoGradePronunciation ? 'Nota automática' : 'Manual') },
-  { id: 'account', title: 'Conta', summary: () => '' },
+const SECTIONS: { id: string; icon: LucideIcon; title: string; form?: string; summary: (g: GlobalSettings) => string }[] = [
+  { id: 'langs', icon: LanguagesIcon, title: 'Idiomas e nível', summary: (g) => g.languages.map((l) => LANG_LABEL[l].split(' ')[1]).join(', ') },
+  { id: 'goal', icon: Target, title: 'Objetivo', summary: (g) => g.goals[g.language] ?? 'B1' },
+  { id: 'pace', icon: CalendarDays, title: 'Ritmo diário', form: 'Ritmo diário', summary: (g) => `${g.newPerDay} novos por dia` },
+  { id: 'freq', icon: Repeat, title: 'Frequência dos cards', form: 'Frequência dos cards', summary: (g) => `Retenção ${Math.round(g.retention * 100)}%` },
+  { id: 'types', icon: Layers, title: 'Tipos de card', form: 'Tipos de card', summary: (g) => `${CARD_TYPES.filter((t) => g.cardTypes[t]).length} ativos` },
+  { id: 'hard', icon: TriangleAlert, title: 'Cards difíceis', form: 'Cards difíceis', summary: (g) => `Após ${g.leechThreshold} erros` },
+  { id: 'display', icon: Volume2, title: 'Exibição e áudio', form: 'Exibição e áudio', summary: (g) => (g.audioOn ? 'Áudio ligado' : 'Áudio desligado') },
+  { id: 'session', icon: Timer, title: 'Sessão', form: 'Sessão', summary: (g) => (g.sessionMode === 'count' ? `${g.sessionSize} cards` : `${g.sessionMinutes} min`) },
+  { id: 'pron', icon: Mic, title: 'Avaliação de pronúncia', form: 'Avaliação de pronúncia', summary: (g) => (g.autoGradePronunciation ? 'Nota automática' : 'Manual') },
+  { id: 'account', icon: UserRound, title: 'Conta', summary: () => '' },
 ];
 
 function Chevron() {
@@ -52,6 +53,7 @@ export default function SettingsPage() {
       <nav className="card divide-y divide-line overflow-hidden">
         {SECTIONS.map((s) => (
           <button key={s.id} onClick={() => setOpen(s.id)} className="flex w-full items-center gap-3 px-4 py-4 text-left transition hover:bg-surface-2">
+            <s.icon className="h-5 w-5 shrink-0 text-accent" strokeWidth={2} aria-hidden />
             <span className="flex-1 font-semibold">{s.title}</span>
             <span className="text-sm text-muted">{s.summary(global)}</span>
             <Chevron />
