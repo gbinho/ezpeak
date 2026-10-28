@@ -1,4 +1,5 @@
 'use client';
+import { Ear, Headphones, Mic, Puzzle, Sparkles, type LucideIcon } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Activity from '@/components/Activity';
 import { AudioBar, PlayButton } from '@/components/Audio';
@@ -12,23 +13,15 @@ import type { Item } from '@/lib/types';
 
 type Mode = 'build' | 'dictation' | 'pairs' | 'speak' | 'weak';
 
-const MODES: { id: Mode; title: string; desc: string }[] = [
-  { id: 'build', title: 'Montar a frase', desc: 'Ordene os blocos' },
-  { id: 'dictation', title: 'Ditado', desc: 'Ouça e escreva' },
-  { id: 'pairs', title: 'Pares mínimos', desc: 'Qual você ouviu?' },
-  { id: 'speak', title: 'Pronúncia', desc: 'Fale e receba uma nota' },
-  { id: 'weak', title: 'Seus erros', desc: 'Frases com o que você mais erra' },
+const MODES: { id: Mode; title: string; desc: string; icon: LucideIcon }[] = [
+  { id: 'build', title: 'Montar a frase', desc: 'Ordene os blocos', icon: Puzzle },
+  { id: 'dictation', title: 'Ditado', desc: 'Ouça e escreva', icon: Headphones },
+  { id: 'pairs', title: 'Pares mínimos', desc: 'Qual você ouviu?', icon: Ear },
+  { id: 'speak', title: 'Pronúncia', desc: 'Fale e receba uma nota', icon: Mic },
+  { id: 'weak', title: 'Seus erros', desc: 'Frases com o que você mais erra', icon: Sparkles },
 ];
 
 const shuffle = <T,>(a: T[]) => [...a].sort(() => Math.random() - 0.5);
-
-function Chevron() {
-  return (
-    <svg viewBox="0 0 24 24" className="h-5 w-5 text-muted" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M9 5l7 7-7 7" />
-    </svg>
-  );
-}
 
 export default function PracticePage() {
   const { global, decks } = useApp();
@@ -46,17 +39,23 @@ export default function PracticePage() {
     return (
       <div className="space-y-4">
         <h1 className="font-display text-3xl font-extrabold">Praticar</h1>
-        <nav className="card divide-y divide-line overflow-hidden">
-          {MODES.map((m) => (
-            <button key={m.id} onClick={() => setMode(m.id)} className="flex w-full items-center gap-3 px-4 py-4 text-left transition hover:bg-surface-2">
-              <span className="flex-1">
-                <span className="block font-semibold">{m.title}</span>
+        <div className="grid grid-cols-2 gap-3">
+          {MODES.map((m, i) => (
+            <button
+              key={m.id}
+              onClick={() => setMode(m.id)}
+              className={`card flex p-4 text-left transition hover:border-accent active:scale-[0.98] ${i === MODES.length - 1 ? 'col-span-2 items-center gap-4' : 'aspect-square flex-col justify-between'}`}
+            >
+              <span className="grid h-12 w-12 place-items-center rounded-2xl bg-accent-soft text-accent">
+                <m.icon className="h-6 w-6" strokeWidth={2} aria-hidden />
+              </span>
+              <span>
+                <span className="block font-display text-lg font-bold leading-tight">{m.title}</span>
                 <span className="hint">{m.desc}</span>
               </span>
-              <Chevron />
             </button>
           ))}
-        </nav>
+        </div>
       </div>
     );
 
