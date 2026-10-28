@@ -61,7 +61,9 @@ Fale como o personagem do cenário, com frases curtas e simples (nível A1–A2$
 Responda APENAS com JSON:
 {"reply": string (sua fala em ${L}), "reply_romanized": ${lang === 'ja' ? 'string' : 'null'}, "reply_respelling": string (pronúncia literal), "reply_pt": string (tradução),
  "corrections": [{"wrong": string, "right": string, "explain_pt": string}] (erros da última mensagem do aluno; [] se não houver),
- "suggestion": string (uma resposta possível para o aluno dar, em ${L})}
+ "suggestion": string (uma resposta possível para o aluno dar, em ${L}),
+ "blocks": string[] (a suggestion dividida em blocos de 1 a 2 palavras, na ordem certa),
+ "distractors": string[] (2 ou 3 blocos plausíveis do mesmo assunto que NÃO fazem parte da suggestion)}
 ${RESPELLING_RULES}`,
         messages: history.length ? history : [{ role: 'user', content: '(comece a conversa)' }],
       };

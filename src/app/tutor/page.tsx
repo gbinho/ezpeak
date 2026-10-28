@@ -15,6 +15,8 @@ type TutorReply = {
   reply_pt: string;
   corrections: { wrong: string; right: string; explain_pt: string }[];
   suggestion: string;
+  blocks?: string[];
+  distractors?: string[];
 };
 type Msg = { role: 'user'; content: string } | { role: 'assistant'; content: string; data: TutorReply };
 
@@ -29,6 +31,7 @@ export default function TutorPage() {
   const [scenario, setScenario] = useState<string | null>(null);
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [input, setInput] = useState('');
+  const [mode, setMode] = useState<'write' | 'blocks'>('blocks');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(0);
@@ -128,16 +131,29 @@ export default function TutorPage() {
               {saved ? `${saved} cards criados em Minhas palavras` : `Salvar ${corrections.length} correções como cards`}
             </button>
           )}
-          {last?.data.suggestion && !busy && (
-            <button className="w-full truncate text-left text-sm text-muted" onClick={() => setInput(last.data.suggestion)}>
-              Sugestão: <span className="text-ink">{last.data.suggestion}</span>
-            </button>
+          <div className="flex rounded-xl border border-line bg-surface p-1 text-sm font-semibold">
+            {(['blocks', 'write'] as const).map((m) => (
+              <button key={m} onClick={() => setMode(m)} className={`flex-1 rounded-lg py-1.5 ${mode === m ? 'bg-accent text-accent-ink' : 'text-muted'}`}>
+                {m === 'blocks' ? 'Blocos' : 'Escrever'}
+              </button>
+            ))}
+          </div>
+          {mode === 'blocks' ? (
+            last && !busy ? <Blocks key={msgs.length} reply={last.data} lang={lang} onSend={submit} /> : <p className="py-3 text-center text-sm text-muted">{busy ? 'Aguardando o tutor…' : ''}</p>
+          ) : (
+            <>
+              {last?.data.suggestion && !busy && (
+                <button className="w-full truncate text-left text-sm text-muted" onClick={() => setInput(last.data.suggestion)}>
+                  Sugestão: <span className="text-ink">{last.data.suggestion}</span>
+                </button>
+              )}
+              <form onSubmit={(e) => { e.preventDefault(); submit(input); }} className="flex gap-2">
+                {canRecognize() && <button type="button" onClick={speakInput} className="btn-ghost shrink-0 px-3" aria-label="Falar">{mic}</button>}
+                <input className="field" value={input} onChange={(e) => setInput(e.target.value)} placeholder={lang === 'en' ? 'Responda em inglês…' : 'Japonês ou romaji…'} />
+                <button className="btn-primary shrink-0" disabled={busy || !input.trim()}>Enviar</button>
+              </form>
+            </>
           )}
-          <form onSubmit={(e) => { e.preventDefault(); submit(input); }} className="flex gap-2">
-            {canRecognize() && <button type="button" onClick={speakInput} className="btn-ghost shrink-0 px-3" aria-label="Falar">{mic}</button>}
-            <input className="field" value={input} onChange={(e) => setInput(e.target.value)} placeholder={lang === 'en' ? 'Responda em inglês…' : 'Japonês ou romaji…'} />
-            <button className="btn-primary shrink-0" disabled={busy || !input.trim()}>Enviar</button>
-          </form>
         </>
       }
     >
@@ -170,5 +186,30 @@ export default function TutorPage() {
         <div ref={bottom} />
       </div>
     </Activity>
+  );
+}
+
+/** Monta a resposta tocando nos blocos sugeridos pelo tutor (com alguns blocos de distração). */
+function Blocks({ reply, lang, onSend }: { reply: TutorReply; lang: 'en' | 'ja'; onSend: (t: string) => void }) {
+  const [bank] = useState(() => {
+    const blocks = reply.blocks?.length ? reply.blocks : reply.suggestion.split(' ');
+    return [...blocks, ...(reply.distractors ?? [])].sort(() => Math.random() - 0.5);
+  });
+  const [chosen, setChosen] = useState<number[]>([]);
+  const text = chosen.map((i) => bank[i]).join(lang === 'ja' ? '' : ' ');
+  return (
+    <div className="space-y-3">
+      <div className="flex min-h-11 flex-wrap gap-1.5 border-b-2 border-line pb-2">
+        {chosen.map((i, k) => (
+          <button key={k} onClick={() => setChosen(chosen.filter((_, j) => j !== k))} className="rounded-lg bg-accent px-3 py-2 text-sm font-semibold text-accent-ink">{bank[i]}</button>
+        ))}
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        {bank.map((w, i) => (
+          <button key={i} disabled={chosen.includes(i)} onClick={() => setChosen([...chosen, i])} className="rounded-lg border border-line bg-surface px-3 py-2 text-sm font-semibold transition disabled:opacity-20">{w}</button>
+        ))}
+      </div>
+      <button className="btn-primary w-full" disabled={!chosen.length} onClick={() => onSend(text)}>Enviar</button>
+    </div>
   );
 }
