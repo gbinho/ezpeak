@@ -31,7 +31,7 @@ export default function Activity({ title, onBack, children, footer, action, lead
         <h1 className="min-w-0 flex-1 truncate text-sm font-semibold tracking-wide text-muted">{title}</h1>
         {action}
       </header>
-      <div className="flex flex-1 flex-col overflow-y-auto px-4 pb-4">{children}</div>
+      <div className="flex min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto px-4 pb-4">{children}</div>
       {footer && <div className="shrink-0 space-y-3 border-t border-line bg-bg px-4 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))]">{footer}</div>}
     </div>
   );

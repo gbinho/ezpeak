@@ -211,7 +211,7 @@ export default function Reading({ lang, onBack }: { lang: Lang; onBack: () => vo
           </div>
         }
       >
-        <article lang={lang} className="space-y-4 pt-2 text-lg leading-relaxed">
+        <article lang={lang} className="min-w-0 space-y-4 pt-2 text-lg leading-relaxed [overflow-wrap:anywhere]">
           {image && (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={image} alt="" className="aspect-video w-full rounded-xl bg-surface-2 object-cover" />
