@@ -31,9 +31,13 @@ async function list(lang: string) {
 
 async function article(url: string) {
   const html = await (await fetch(url, { headers: UA, next: { revalidate: 3600 } })).text();
-  const paragraphs = [...html.matchAll(/<p[^>]*>([\s\S]*?)<\/p>/g)]
+  // Só a tag <p> (e não <picture>, <path>…); prefere o conteúdo dentro de <article>.
+  const body = html.match(/<article[\s>][\s\S]*<\/article>/)?.[0] ?? html;
+  const paragraphs = [...body.matchAll(/<p(?:\s[^>]*)?>([\s\S]*?)<\/p>/g)]
     .map(([, p]) => decode(p.replace(/<[^>]+>/g, '')).replace(/\s+/g, ' ').replace(/^\d+コメント\d+件/, ''))
-    .filter((p) => p.length > 40 && !/cookie|©|copyright|newsletter|javascript|記事全文を読む/i.test(p))
+    .filter((p) => p.length > 40 && !/cookie|©|copyright|newsletter|javascript|記事全文を読む|skip to content|image source|image caption|extension de votre navigateur|lecteur vidéo/i.test(p))
+    // Itens de menu colados ("HomeNewsSport…") aparecem como várias palavras sem espaço entre si.
+    .filter((p) => (p.match(/[a-zа-я][A-ZА-Я]/g)?.length ?? 0) < 3)
     // Menus coladas viram blocos longos sem espaço; texto de verdade tem espaços (exceto japonês).
     .filter((p) => /[぀-ヿ一-鿿]/.test(p) || (p.match(/ /g)?.length ?? 0) >= p.length / 15);
   const image = decode(html.match(/<meta[^>]+property="og:image"[^>]+content="([^"]+)"/)?.[1] ?? html.match(/<meta[^>]+content="([^"]+)"[^>]+property="og:image"/)?.[1] ?? '') || null;
