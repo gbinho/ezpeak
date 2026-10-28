@@ -6,6 +6,7 @@ import type { Grade } from 'ts-fsrs';
 import Flashcard from '@/components/Flashcard';
 import { callAI } from '@/lib/ai';
 import { useApp } from '@/lib/app-context';
+import { isDeckAdded } from '@/lib/settings';
 import { buildQueue, startOfToday, type Entry } from '@/lib/queue';
 import { formatInterval, fsrsToRow, preview, Rating } from '@/lib/srs';
 import { supabase } from '@/lib/supabase';
@@ -47,8 +48,8 @@ function Study() {
 
   const sessionSettings = settingsFor(deckId ?? undefined);
   const activeDecks = useMemo(
-    () => decks.filter((d) => (deckId ? d.id === deckId : d.language === global.language && !global.disabledDecks.includes(d.id))),
-    [decks, deckId, global.language, global.disabledDecks],
+    () => decks.filter((d) => (deckId ? d.id === deckId : d.language === global.language && isDeckAdded(global, d.id))),
+    [decks, deckId, global],
   );
 
   useEffect(() => {

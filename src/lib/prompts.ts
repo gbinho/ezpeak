@@ -24,7 +24,7 @@ export function buildPrompt(action: string, body: Record<string, unknown>): Prom
         system: `Você cria flashcards de ${L} para brasileiros. Responda APENAS com JSON.\n${RESPELLING_RULES}`,
         messages: [{
           role: 'user',
-          content: `Crie um card para: "${word}" (pode estar em português ou em ${L}; o card é sempre do ${L}).
+          content: `Crie um card para: "${word}" (pode estar em português ou em ${L}; o card é sempre do ${L}). Dificuldade da frase de exemplo: ${String(body.level ?? 'fácil')}.
 JSON: {"text_original": string (em ${L}${lang === 'ja' ? ', em kana/kanji' : ''}), "text_romanized": ${lang === 'ja' ? 'string (romaji Hepburn)' : 'null'}, "translation_pt": string, "respelling_pt": string, "tip_pt": string|null, "example": string (frase curta e útil em ${L}), "example_pt": string, "kind": "word"|"phrase"|"chunk"}`,
         }],
       };

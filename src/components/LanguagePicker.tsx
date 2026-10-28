@@ -6,7 +6,7 @@ import type { Lang } from '@/lib/types';
 
 /** Escolhe idioma e nível. Usado no primeiro login e para adicionar outro idioma. */
 export default function LanguagePicker({ onDone }: { onDone?: () => void }) {
-  const { global, saveGlobal } = useApp();
+  const { global, saveGlobal, decks } = useApp();
   const available = (['en', 'ja'] as Lang[]).filter((l) => !global.languages.includes(l));
   const [lang, setLang] = useState<Lang | null>(available.length === 1 ? available[0] : null);
 
@@ -17,6 +17,8 @@ export default function LanguagePicker({ onDone }: { onDone?: () => void }) {
       language: lang!,
       languages: [...global.languages, lang!],
       levels: { ...global.levels, [lang!]: level },
+      // Começa com o primeiro deck do idioma; os outros aparecem em "Próximos".
+      addedDecks: [...(global.addedDecks ?? []), ...decks.filter((d) => d.language === lang && !d.owner_id).slice(0, 1).map((d) => d.id)],
       onboarded: true,
     });
     onDone?.();

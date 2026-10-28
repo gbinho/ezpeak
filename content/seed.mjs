@@ -41,7 +41,7 @@ export const decks = [
   },
   {
     language: 'en', title: 'Aeroporto', theme: 'viagem', level: 'A2', sort: 3, survival: true,
-    description: 'Modo sobrevivência: check-in, embarque e imigração.',
+    description: 'Check-in, embarque e imigração.',
     items: [
       ['Passport', null, 'Passaporte', 'PÉS-port', null, 'Here is my passport.', 'Aqui está meu passaporte.'],
       ['Boarding pass', null, 'Cartão de embarque', 'BÓR-din pés', null, 'Can I see your boarding pass?', 'Posso ver seu cartão de embarque?', 'chunk'],
@@ -57,7 +57,7 @@ export const decks = [
   },
   {
     language: 'en', title: 'Restaurante', theme: 'comida', level: 'A2', sort: 4, survival: true,
-    description: 'Modo sobrevivência: pedir, pagar e reclamar.',
+    description: 'Pedir, pagar e reclamar.',
     items: [
       ['A table for two, please', null, 'Uma mesa para dois, por favor', 'â TEI-bâl for TUU, pliiz', null, null, null, 'chunk'],
       ['The menu, please', null, 'O cardápio, por favor', 'dâ MÉ-niu, pliiz', null, null, null, 'chunk'],
@@ -142,7 +142,7 @@ export const decks = [
   },
   {
     language: 'ja', title: 'Restaurante', theme: 'comida', level: 'N5', sort: 3, survival: true,
-    description: 'Modo sobrevivência: pedir, pagar e agradecer.',
+    description: 'Pedir, pagar e agradecer.',
     items: [
       ['これをください', 'kore o kudasai', 'Isto, por favor', 'ko-re o ku-da-SSAI', null, null, null, 'chunk'],
       ['おかいけいおねがいします', 'okaikei onegaishimasu', 'A conta, por favor', 'o-kai-KÊÊ o-ne-gai-shi-MAS', null, null, null, 'chunk'],
@@ -158,7 +158,7 @@ export const decks = [
   },
   {
     language: 'ja', title: 'Estação e transporte', theme: 'viagem', level: 'N5', sort: 4, survival: true,
-    description: 'Modo sobrevivência: trem, metrô e direções.',
+    description: 'Trem, metrô e direções.',
     items: [
       ['えき', 'eki', 'Estação', 'É-ki', null, null, null],
       ['でんしゃ', 'densha', 'Trem', 'DÊN-sha', null, null, null],

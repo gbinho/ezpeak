@@ -78,6 +78,11 @@ export default function StatsPage() {
     <div className="space-y-5">
       <h1 className="font-display text-3xl font-extrabold">Progresso</h1>
 
+      <Link href="/study?extra=starred" className="card flex items-center justify-between px-4 py-4 font-semibold">
+        Revisar cards marcados
+        <span className="text-sm font-normal text-muted">não altera o agendamento</span>
+      </Link>
+
       <div className="grid grid-cols-2 gap-3">
         <Tile n={known} l="palavras que você sabe" />
         <Tile n={level} l="nível estimado" />

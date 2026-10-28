@@ -56,6 +56,8 @@ export type GlobalSettings = Settings & {
   languages: Lang[];
   levels: Partial<Record<Lang, Level>>;
   disabledDecks: string[];
+  /** Decks que a pessoa adicionou. Ausente em contas antigas: todos menos os pausados. */
+  addedDecks?: string[];
   onboarded: boolean;
 };
 
@@ -123,4 +125,8 @@ export function effectiveSettings(global: GlobalSettings, deckOverrides?: Partia
 export function estimateDailyReviews(newPerDay: number, retention: number, cardTypesOn: number) {
   const factor = 1 / Math.max(0.02, 1 - retention); // retenção maior → intervalos menores
   return Math.round(newPerDay * cardTypesOn * (factor / 6));
+}
+
+export function isDeckAdded(g: GlobalSettings, deckId: string) {
+  return g.addedDecks ? g.addedDecks.includes(deckId) : !g.disabledDecks.includes(deckId);
 }

@@ -16,6 +16,7 @@ export default function CreatePage() {
   const { global, decks, session, reloadDecks } = useApp();
   const lang = global.language;
   const [word, setWord] = useState('');
+  const [level, setLevel] = useState<'fácil' | 'médio' | 'difícil'>('fácil');
   const [draft, setDraft] = useState<Draft | null>(null);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -24,7 +25,7 @@ export default function CreatePage() {
     setBusy(true);
     setMsg(null);
     try {
-      setDraft({ ...EMPTY, ...(await callAI<Draft>('generate', { word, language: lang })) });
+      setDraft({ ...EMPTY, ...(await callAI<Draft>('generate', { word, level, language: lang })) });
     } catch (e) {
       setMsg((e as Error).message);
     }
@@ -65,6 +66,11 @@ export default function CreatePage() {
         <input className="field" placeholder={lang === 'en' ? 'ex.: "cachorro" ou "I miss you"' : 'ex.: "gato" ou "おはよう"'} value={word} onChange={(e) => setWord(e.target.value)} required />
         <button className="btn-primary shrink-0" disabled={busy}>{busy && !draft ? '…' : '✨ Gerar'}</button>
       </form>
+      <div className="flex rounded-xl border border-line bg-surface p-1 text-sm font-semibold">
+        {(['fácil', 'médio', 'difícil'] as const).map((l) => (
+          <button key={l} onClick={() => setLevel(l)} className={`flex-1 rounded-lg py-2 capitalize ${level === l ? 'bg-accent text-accent-ink' : 'text-muted'}`}>{l}</button>
+        ))}
+      </div>
       <button className="text-sm font-semibold text-accent" onClick={() => setDraft({ ...EMPTY })}>Ou preencher manualmente</button>
       {msg && <p className="rounded-xl bg-surface-2 p-3 text-sm">{msg}</p>}
 

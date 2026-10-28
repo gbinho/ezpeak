@@ -30,7 +30,7 @@ insert into public.items (deck_id,kind,text_original,text_romanized,translation_
 ((select id from d),'word','Twenty',null,'Vinte','TUÉN-ti','Americanos costumam falar "TUÉ-ni".','Twenty euros.','Vinte euros.',10),
 ((select id from d),'word','Hundred',null,'Cem','RÂN-dred',null,'One hundred dollars.','Cem dólares.',11);
 with d as (insert into public.decks (language,title,theme,level,description,is_survival,sort_order)
-values ('en','Aeroporto','viagem','A2','Modo sobrevivência: check-in, embarque e imigração.',true,3) returning id)
+values ('en','Aeroporto','viagem','A2','Check-in, embarque e imigração.',true,3) returning id)
 insert into public.items (deck_id,kind,text_original,text_romanized,translation_pt,respelling_pt,tip_pt,example,example_pt,sort_order) values
 ((select id from d),'word','Passport',null,'Passaporte','PÉS-port',null,'Here is my passport.','Aqui está meu passaporte.',0),
 ((select id from d),'chunk','Boarding pass',null,'Cartão de embarque','BÓR-din pés',null,'Can I see your boarding pass?','Posso ver seu cartão de embarque?',1),
@@ -43,7 +43,7 @@ insert into public.items (deck_id,kind,text_original,text_romanized,translation_
 ((select id from d),'word','Customs',null,'Alfândega','KÂS-tâmz',null,'Go through customs.','Passe pela alfândega.',8),
 ((select id from d),'word','Delayed',null,'Atrasado','di-LEID',null,'The flight is delayed.','O voo está atrasado.',9);
 with d as (insert into public.decks (language,title,theme,level,description,is_survival,sort_order)
-values ('en','Restaurante','comida','A2','Modo sobrevivência: pedir, pagar e reclamar.',true,4) returning id)
+values ('en','Restaurante','comida','A2','Pedir, pagar e reclamar.',true,4) returning id)
 insert into public.items (deck_id,kind,text_original,text_romanized,translation_pt,respelling_pt,tip_pt,example,example_pt,sort_order) values
 ((select id from d),'chunk','A table for two, please',null,'Uma mesa para dois, por favor','â TEI-bâl for TUU, pliiz',null,null,null,0),
 ((select id from d),'chunk','The menu, please',null,'O cardápio, por favor','dâ MÉ-niu, pliiz',null,null,null,1),
@@ -112,7 +112,7 @@ insert into public.items (deck_id,kind,text_original,text_romanized,translation_
 ((select id from d),'word','ひゃく','hyaku','Cem','RIÁ-ku',null,null,null,10),
 ((select id from d),'word','せん','sen','Mil','SSÊN',null,null,null,11);
 with d as (insert into public.decks (language,title,theme,level,description,is_survival,sort_order)
-values ('ja','Restaurante','comida','N5','Modo sobrevivência: pedir, pagar e agradecer.',true,3) returning id)
+values ('ja','Restaurante','comida','N5','Pedir, pagar e agradecer.',true,3) returning id)
 insert into public.items (deck_id,kind,text_original,text_romanized,translation_pt,respelling_pt,tip_pt,example,example_pt,sort_order) values
 ((select id from d),'chunk','これをください','kore o kudasai','Isto, por favor','ko-re o ku-da-SSAI',null,null,null,0),
 ((select id from d),'chunk','おかいけいおねがいします','okaikei onegaishimasu','A conta, por favor','o-kai-KÊÊ o-ne-gai-shi-MAS',null,null,null,1),
@@ -125,7 +125,7 @@ insert into public.items (deck_id,kind,text_original,text_romanized,translation_
 ((select id from d),'word','すし','sushi','Sushi','SSU-shi',null,null,null,8),
 ((select id from d),'word','ビール','bīru','Cerveja','BII-ru','Vogal longa: "bii". Com "i" curto vira "biru" (prédio).',null,null,9);
 with d as (insert into public.decks (language,title,theme,level,description,is_survival,sort_order)
-values ('ja','Estação e transporte','viagem','N5','Modo sobrevivência: trem, metrô e direções.',true,4) returning id)
+values ('ja','Estação e transporte','viagem','N5','Trem, metrô e direções.',true,4) returning id)
 insert into public.items (deck_id,kind,text_original,text_romanized,translation_pt,respelling_pt,tip_pt,example,example_pt,sort_order) values
 ((select id from d),'word','えき','eki','Estação','É-ki',null,null,null,0),
 ((select id from d),'word','でんしゃ','densha','Trem','DÊN-sha',null,null,null,1),
