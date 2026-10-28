@@ -24,3 +24,5 @@ npm run dev
 | `NEXT_PUBLIC_SUPABASE_URL` | URL do projeto Supabase |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Chave pública (publishable) |
 | `ANTHROPIC_API_KEY` | Opcional: ativa tutor, criação de cards e explicações com IA |
+
+Produção: https://falafacil-beryl.vercel.app
