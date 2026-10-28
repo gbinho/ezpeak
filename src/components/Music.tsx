@@ -1,5 +1,5 @@
 'use client';
-import { ExternalLink, Pause, Play, Repeat1, Search } from 'lucide-react';
+import { ExternalLink, Pause, Play, Repeat1, Search, Volume2, VolumeX } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useApp } from '@/lib/app-context';
 import { loadExcerpt, type Excerpt } from '@/lib/lyrics';
@@ -42,6 +42,33 @@ export default function Music({ lang, onBack }: { lang: Lang; onBack: () => void
   const [done, setDone] = useState(false);
   const [cards, setCards] = useState<{ done: number; total: number } | null>(null);
   const audio = useRef<HTMLAudioElement>(null);
+  const [volume, setVolume] = useState(0.8);
+  const fadeRef = useRef(0);
+
+  /** Fade de volume em ~350 ms (entrada e saída suaves). */
+  function fade(to: number, then?: () => void) {
+    const a = audio.current;
+    if (!a) return;
+    const id = ++fadeRef.current;
+    const from = a.volume;
+    const t0 = performance.now();
+    const step = (now: number) => {
+      if (id !== fadeRef.current) return;
+      const k = Math.min(1, (now - t0) / 350);
+      a.volume = from + (to - from) * k;
+      if (k < 1) requestAnimationFrame(step);
+      else then?.();
+    };
+    requestAnimationFrame(step);
+  }
+  const play = () => {
+    const a = audio.current;
+    if (!a) return;
+    a.volume = 0;
+    a.play();
+    fade(volume);
+  };
+  const pause = () => fade(0, () => audio.current?.pause());
 
   async function search(e: React.FormEvent) {
     e.preventDefault();
@@ -92,7 +119,7 @@ export default function Music({ lang, onBack }: { lang: Lang; onBack: () => void
   const seek = (t: number) => {
     const a = audio.current!;
     a.currentTime = t;
-    a.play();
+    if (a.paused) play();
   };
 
   const toggle = (w: string) => {
@@ -132,7 +159,7 @@ export default function Music({ lang, onBack }: { lang: Lang; onBack: () => void
       </Activity>
     );
 
-  const back = () => { audio.current?.pause(); setSong(null); };
+  const back = () => { pause(); setSong(null); };
 
   // ---------- resultado ----------
   if (done)
@@ -168,18 +195,37 @@ export default function Music({ lang, onBack }: { lang: Lang; onBack: () => void
     <Activity
       title={`${song.title} · ${song.artist}`}
       onBack={back}
+      leading={
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={song.cover} alt="" className="mr-1 h-8 w-8 shrink-0 rounded-md object-cover" />
+      }
       footer={
         excerpt && (
+          <>
+          <label className="flex items-center gap-3 text-muted">
+            {volume === 0 ? <VolumeX className="h-5 w-5 shrink-0" /> : <Volume2 className="h-5 w-5 shrink-0" />}
+            <input
+              type="range"
+              min={0}
+              max={1}
+              step={0.05}
+              value={volume}
+              aria-label="Volume"
+              onChange={(e) => { const v = +e.target.value; setVolume(v); fadeRef.current++; if (audio.current) audio.current.volume = v; }}
+              className="w-full accent-[var(--accent)]"
+            />
+          </label>
           <div className="flex gap-2">
-            <button onClick={() => (playing ? audio.current?.pause() : audio.current?.play())} className="btn-ghost shrink-0" aria-label={playing ? 'Pausar' : 'Tocar'}>
+            <button onClick={() => (playing ? pause() : play())} className="btn-ghost shrink-0" aria-label={playing ? 'Pausar' : 'Tocar'}>
               {playing ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
             </button>
             <button onClick={() => setLoop(!loop)} className={`btn-ghost shrink-0 ${loop ? 'text-accent' : ''}`} aria-label="Repetir a linha" aria-pressed={loop}>
               <Repeat1 className="h-5 w-5" />
             </button>
             <button onClick={() => setSlow(!slow)} className={`btn-ghost shrink-0 px-3 text-sm tabular-nums ${slow ? 'text-accent' : ''}`}>{slow ? '0.75×' : '1×'}</button>
-            <button className="btn-primary flex-1" onClick={() => { audio.current?.pause(); setDone(true); }}>Terminei</button>
+            <button className="btn-primary flex-1" onClick={() => { pause(); setDone(true); }}>Terminei</button>
           </div>
+          </>
         )
       }
       action={
@@ -191,7 +237,12 @@ export default function Music({ lang, onBack }: { lang: Lang; onBack: () => void
       <audio
         ref={audio}
         src={`/api/music?audio=${encodeURIComponent(song.preview)}`}
-        onTimeUpdate={(e) => setTime(e.currentTarget.currentTime)}
+        onTimeUpdate={(e) => {
+          const a = e.currentTarget;
+          setTime(a.currentTime);
+          // Fade-out no fim da prévia (exceto quando está repetindo uma linha).
+          if (!loop && a.duration && a.duration - a.currentTime < 1.2 && a.volume === volume) fade(0);
+        }}
         onPlay={() => setPlaying(true)}
         onPause={() => setPlaying(false)}
         onEnded={() => setPlaying(false)}
