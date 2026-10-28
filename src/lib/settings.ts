@@ -58,6 +58,11 @@ export type GlobalSettings = Settings & {
   disabledDecks: string[];
   /** Decks que a pessoa adicionou. Ausente em contas antigas: todos menos os pausados. */
   addedDecks?: string[];
+  /** Nível que a pessoa quer atingir em cada idioma (CEFR). */
+  goals: Partial<Record<Lang, 'A1' | 'A2' | 'B1' | 'B2' | 'C1'>>;
+  name: string;
+  /** Foto pequena (data URL 96px). */
+  avatar: string | null;
   onboarded: boolean;
 };
 
@@ -67,6 +72,9 @@ export const DEFAULTS: GlobalSettings = {
   language: 'en',
   languages: [],
   levels: {},
+  goals: {},
+  name: '',
+  avatar: null,
   disabledDecks: [],
   onboarded: false,
   audioOn: true,

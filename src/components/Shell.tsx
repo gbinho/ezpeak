@@ -11,7 +11,7 @@ const NAV = [
   { href: '/', label: 'Início', icon: 'M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z' },
   { href: '/practice', label: 'Praticar', icon: 'M12 3v10m0 0a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v4a3 3 0 0 0 3 3zm-7-3a7 7 0 0 0 14 0M12 17v4' },
   { href: '/tutor', label: 'Tutor', icon: 'M4 5h16v11H9l-5 4z' },
-  { href: '/stats', label: 'Progresso', icon: 'M4 20V10m6 10V4m6 16v-7m4 7H2' },
+  { href: '/profile', label: 'Perfil', icon: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm-7 9a7 7 0 0 1 14 0' },
   { href: '/settings', label: 'Ajustes', icon: 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm8-3l2-1-2-4-2 1-2-1V5h-4v2l-2 1-2-1-2 4 2 1v2l-2 1 2 4 2-1 2 1v2h4v-2l2-1 2 1 2-4-2-1z' },
 ];
 
