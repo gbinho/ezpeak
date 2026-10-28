@@ -66,7 +66,7 @@ export type GlobalSettings = Settings & {
   onboarded: boolean;
 };
 
-export const LANG_LABEL: Record<Lang, string> = { en: '🇺🇸 Inglês', ja: '🇯🇵 Japonês' };
+export const LANG_LABEL: Record<Lang, string> = { en: 'Inglês', ja: 'Japonês', ru: 'Russo', fr: 'Francês' };
 
 export const DEFAULTS: GlobalSettings = {
   language: 'en',

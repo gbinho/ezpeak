@@ -3,7 +3,9 @@
 export type Msg = { role: 'user' | 'assistant'; content: string };
 export type Prompt = { system: string; messages: Msg[]; maxTokens: number; json: boolean; wrap?: (parsed: unknown) => unknown };
 
-const LANG_NAME = { en: 'inglês (americano)', ja: 'japonês' } as const;
+import type { Lang } from './types';
+
+const LANG_NAME: Record<Lang, string> = { en: 'inglês (americano)', ja: 'japonês', ru: 'russo', fr: 'francês' };
 
 const RESPELLING_RULES = `Regras da "pronúncia literal" (respelling_pt):
 - Escreva como um brasileiro leria em voz alta para soar o mais próximo possível do nativo, usando só letras do português.
@@ -13,8 +15,10 @@ const RESPELLING_RULES = `Regras da "pronúncia literal" (respelling_pt):
 - Em "tip_pt", explique em uma frase curta o som que não existe em português (ex.: "th", vogal longa), ou null.`;
 
 export function buildPrompt(action: string, body: Record<string, unknown>): Prompt {
-  const lang: 'en' | 'ja' = body.language === 'ja' ? 'ja' : 'en';
+  const lang = (body.language as Lang) in LANG_NAME ? (body.language as Lang) : 'en';
   const L = LANG_NAME[lang];
+  // Romanização: romaji no japonês, transliteração latina no russo.
+  const roman = lang === 'ja' ? 'string (romaji Hepburn)' : lang === 'ru' ? 'string (transliteração latina)' : 'null';
   switch (action) {
     case 'generate': {
       const word = String(body.word ?? '').slice(0, 120);
@@ -25,7 +29,7 @@ export function buildPrompt(action: string, body: Record<string, unknown>): Prom
         messages: [{
           role: 'user',
           content: `Crie um card para: "${word}" (pode estar em português ou em ${L}; o card é sempre do ${L}). Dificuldade da frase de exemplo: ${String(body.level ?? 'fácil')}.
-JSON: {"text_original": string (em ${L}${lang === 'ja' ? ', em kana/kanji' : ''}), "text_romanized": ${lang === 'ja' ? 'string (romaji Hepburn)' : 'null'}, "translation_pt": string, "respelling_pt": string, "tip_pt": string|null, "example": string (frase curta e útil em ${L}), "example_pt": string, "kind": "word"|"phrase"|"chunk"}`,
+JSON: {"text_original": string (em ${L}${lang === 'ja' ? ', em kana/kanji' : ''}), "text_romanized": ${roman}, "translation_pt": string, "respelling_pt": string, "tip_pt": string|null, "example": string (frase curta e útil em ${L}), "example_pt": string, "kind": "word"|"phrase"|"chunk"}`,
         }],
       };
     }
@@ -47,7 +51,7 @@ JSON: {"text_original": string (em ${L}${lang === 'ja' ? ', em kana/kanji' : ''}
         wrap: (p) => ({ sentences: p }),
         system: `Você cria frases curtas de ${L} nível iniciante para brasileiros. Responda APENAS com JSON.\n${RESPELLING_RULES}`,
         messages: [{ role: 'user', content: `Crie 5 frases curtas e naturais usando principalmente estas palavras que o aluno está errando: ${words}.
-JSON: [{"text": string, "romanized": ${lang === 'ja' ? 'string' : 'null'}, "pt": string, "respelling_pt": string}]` }],
+JSON: [{"text": string, "romanized": ${roman}, "pt": string, "respelling_pt": string}]` }],
       };
     }
     case 'tutor': {
@@ -59,7 +63,7 @@ JSON: [{"text": string, "romanized": ${lang === 'ja' ? 'string' : 'null'}, "pt":
         system: `Você é um tutor de ${L} fazendo roleplay com um aluno brasileiro iniciante. Cenário: ${scenario}.
 Fale como o personagem do cenário, com frases curtas e simples (nível A1–A2${lang === 'ja' ? ', japonês polido です/ます' : ''}).
 Responda APENAS com JSON:
-{"reply": string (sua fala em ${L}), "reply_romanized": ${lang === 'ja' ? 'string' : 'null'}, "reply_respelling": string (pronúncia literal), "reply_pt": string (tradução),
+{"reply": string (sua fala em ${L}), "reply_romanized": ${roman}, "reply_respelling": string (pronúncia literal), "reply_pt": string (tradução),
  "corrections": [{"wrong": string, "right": string, "explain_pt": string}] (erros da última mensagem do aluno; [] se não houver),
  "suggestion": string (uma resposta possível para o aluno dar, em ${L}),
  "blocks": string[] (a suggestion dividida em blocos de 1 a 2 palavras, na ordem certa),

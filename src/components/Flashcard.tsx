@@ -42,7 +42,7 @@ export default function Flashcard({ entry, s, revealed, onReveal, onSuggest }: P
   const showFrontRespelling = crutch === 'always' || (crutch === 'tap' && peek);
 
   const showKana = lang !== 'ja' || s.jaScript !== 'romaji';
-  const showRomaji = lang === 'ja' && s.jaScript !== 'kana' && item.text_romanized;
+  const showRomaji = (lang === 'ru' || (lang === 'ja' && s.jaScript !== 'kana')) && item.text_romanized;
 
   const original = (
     <div className="space-y-1 text-center">

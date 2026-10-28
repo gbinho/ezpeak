@@ -161,4 +161,82 @@ insert into public.items (deck_id,kind,text_original,text_romanized,translation_
 ((select id from d),'word','にほんご','nihongo','Língua japonesa','ni-RÔN-go',null,null,null,7),
 ((select id from d),'word','きょう','kyō','Hoje','KIÔÔ',null,null,null,8),
 ((select id from d),'word','あした','ashita','Amanhã','ash-TA','O "i" de "shi" some.',null,null,9);
+with d as (insert into public.decks (language,title,theme,level,description,is_survival,sort_order)
+values ('ru','Cumprimentos','basico','A1','Olá, obrigado e o básico de toda conversa.',false,1) returning id)
+insert into public.items (deck_id,kind,text_original,text_romanized,translation_pt,respelling_pt,tip_pt,example,example_pt,sort_order) values
+((select id from d),'word','Привет','privet','Oi','pri-VIÉT',null,null,null,0),
+((select id from d),'word','Здравствуйте','zdravstvuyte','Olá (formal)','ZDRAST-vui-tie','O primeiro "v" não se pronuncia.',null,null,1),
+((select id from d),'word','Спасибо','spasibo','Obrigado','spa-SSI-ba','O "o" sem acento vira "a".',null,null,2),
+((select id from d),'word','Пожалуйста','pozhaluysta','Por favor / de nada','pa-JÁL-sta',null,null,null,3),
+((select id from d),'word','Да','da','Sim','DA',null,null,null,4),
+((select id from d),'word','Нет','net','Não','NIÉT',null,null,null,5),
+((select id from d),'word','Извините','izvinite','Desculpe','iz-vi-NI-tie',null,null,null,6),
+((select id from d),'phrase','До свидания','do svidaniya','Tchau','da-svi-DÁ-ni-ia',null,null,null,7),
+((select id from d),'chunk','Как дела?','kak dela?','Tudo bem?','kak di-LA',null,null,null,8),
+((select id from d),'chunk','Меня зовут…','menya zovut…','Meu nome é…','mi-NIÁ za-VUT',null,null,null,9);
+with d as (insert into public.decks (language,title,theme,level,description,is_survival,sort_order)
+values ('ru','Números','numeros','A1','De um a dez.',false,2) returning id)
+insert into public.items (deck_id,kind,text_original,text_romanized,translation_pt,respelling_pt,tip_pt,example,example_pt,sort_order) values
+((select id from d),'word','Один','odin','Um','a-DIN',null,null,null,0),
+((select id from d),'word','Два','dva','Dois','DVA',null,null,null,1),
+((select id from d),'word','Три','tri','Três','TRI','O "r" é vibrado, como em espanhol.',null,null,2),
+((select id from d),'word','Четыре','chetyre','Quatro','tchi-TÍ-rie',null,null,null,3),
+((select id from d),'word','Пять','pyat','Cinco','PIAT',null,null,null,4),
+((select id from d),'word','Шесть','shest','Seis','SHÉST',null,null,null,5),
+((select id from d),'word','Семь','sem','Sete','SSÉM',null,null,null,6),
+((select id from d),'word','Восемь','vosem','Oito','VÓ-ssiem',null,null,null,7),
+((select id from d),'word','Девять','devyat','Nove','DIÉ-viat',null,null,null,8),
+((select id from d),'word','Десять','desyat','Dez','DIÉ-ssiat',null,null,null,9);
+with d as (insert into public.decks (language,title,theme,level,description,is_survival,sort_order)
+values ('ru','Restaurante','comida','A2','Pedir, pagar e agradecer.',true,3) returning id)
+insert into public.items (deck_id,kind,text_original,text_romanized,translation_pt,respelling_pt,tip_pt,example,example_pt,sort_order) values
+((select id from d),'chunk','Меню, пожалуйста','menyu, pozhaluysta','O cardápio, por favor','mi-NIU, pa-JÁL-sta',null,null,null,0),
+((select id from d),'chunk','Счёт, пожалуйста','schyot, pozhaluysta','A conta, por favor','SHIÓT, pa-JÁL-sta',null,null,null,1),
+((select id from d),'chunk','Сколько стоит?','skolko stoit?','Quanto custa?','SKÓL-ka STÓ-it',null,null,null,2),
+((select id from d),'word','Вода','voda','Água','va-DA',null,null,null,3),
+((select id from d),'word','Кофе','kofe','Café','KÓ-fie',null,null,null,4),
+((select id from d),'word','Чай','chay','Chá','TCHAI',null,null,null,5),
+((select id from d),'word','Хлеб','khleb','Pão','RLIÉP','O "х" é um "r" raspado na garganta.',null,null,6),
+((select id from d),'word','Вкусно','vkusno','Gostoso','FKUS-na',null,null,null,7),
+((select id from d),'chunk','Я хочу…','ya khochu…','Eu quero…','ia ra-TCHU',null,null,null,8),
+((select id from d),'chunk','Без мяса','bez myasa','Sem carne','biez MIÁ-ssa',null,null,null,9);
+with d as (insert into public.decks (language,title,theme,level,description,is_survival,sort_order)
+values ('fr','Cumprimentos','basico','A1','Bonjour, merci e o básico de toda conversa.',false,1) returning id)
+insert into public.items (deck_id,kind,text_original,text_romanized,translation_pt,respelling_pt,tip_pt,example,example_pt,sort_order) values
+((select id from d),'word','Bonjour',null,'Bom dia / olá','bon-JUR','"on" é nasal, como em "bom".','Bonjour, ça va ?','Olá, tudo bem?',0),
+((select id from d),'word','Bonsoir',null,'Boa noite (cumprimento)','bon-SUAR',null,null,null,1),
+((select id from d),'word','Salut',null,'Oi / tchau (informal)','sa-LÜ','"u" francês: diga "i" com os lábios em bico.',null,null,2),
+((select id from d),'word','Merci',null,'Obrigado','mér-SSI','O "r" é raspado na garganta.','Merci beaucoup !','Muito obrigado!',3),
+((select id from d),'phrase','S''il vous plaît',null,'Por favor','sil vu PLÉ',null,null,null,4),
+((select id from d),'word','Pardon',null,'Desculpe','par-DON',null,null,null,5),
+((select id from d),'word','Oui',null,'Sim','UI',null,null,null,6),
+((select id from d),'word','Non',null,'Não','NON',null,null,null,7),
+((select id from d),'phrase','Au revoir',null,'Tchau','ô rre-VUAR',null,null,null,8),
+((select id from d),'chunk','Comment ça va ?',null,'Como vai?','ko-MAN sa VA',null,null,null,9);
+with d as (insert into public.decks (language,title,theme,level,description,is_survival,sort_order)
+values ('fr','Números','numeros','A1','De um a dez.',false,2) returning id)
+insert into public.items (deck_id,kind,text_original,text_romanized,translation_pt,respelling_pt,tip_pt,example,example_pt,sort_order) values
+((select id from d),'word','Un',null,'Um','AN','Nasal.',null,null,0),
+((select id from d),'word','Deux',null,'Dois','DÖ','"eu": diga "ê" com os lábios em bico.',null,null,1),
+((select id from d),'word','Trois',null,'Três','TRUÁ',null,null,null,2),
+((select id from d),'word','Quatre',null,'Quatro','KATR',null,null,null,3),
+((select id from d),'word','Cinq',null,'Cinco','SSANK',null,null,null,4),
+((select id from d),'word','Six',null,'Seis','SSIS',null,null,null,5),
+((select id from d),'word','Sept',null,'Sete','SSÉT',null,null,null,6),
+((select id from d),'word','Huit',null,'Oito','ÜIT',null,null,null,7),
+((select id from d),'word','Neuf',null,'Nove','NÖF',null,null,null,8),
+((select id from d),'word','Dix',null,'Dez','DIS',null,null,null,9);
+with d as (insert into public.decks (language,title,theme,level,description,is_survival,sort_order)
+values ('fr','Restaurante','comida','A2','Pedir, pagar e agradecer.',true,3) returning id)
+insert into public.items (deck_id,kind,text_original,text_romanized,translation_pt,respelling_pt,tip_pt,example,example_pt,sort_order) values
+((select id from d),'chunk','L''addition, s''il vous plaît',null,'A conta, por favor','la-di-SSIÔN, sil vu PLÉ',null,null,null,0),
+((select id from d),'chunk','Je voudrais…',null,'Eu gostaria de…','je vu-DRÉ',null,'Je voudrais un café.','Eu gostaria de um café.',1),
+((select id from d),'chunk','C''est combien ?',null,'Quanto custa?','sé kon-BIAN',null,null,null,2),
+((select id from d),'word','L''eau',null,'A água','LÔ',null,null,null,3),
+((select id from d),'word','Le pain',null,'O pão','le PAN',null,null,null,4),
+((select id from d),'word','Le fromage',null,'O queijo','le fro-MAJ',null,null,null,5),
+((select id from d),'word','Le vin',null,'O vinho','le VAN',null,null,null,6),
+((select id from d),'word','Délicieux',null,'Delicioso','de-li-SSIÖ',null,null,null,7),
+((select id from d),'chunk','Une table pour deux',null,'Uma mesa para dois','ün TABL pur DÖ',null,null,null,8),
+((select id from d),'chunk','Sans viande',null,'Sem carne','san VIAND',null,null,null,9);
 commit;

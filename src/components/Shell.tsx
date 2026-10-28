@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 import { useApp } from '@/lib/app-context';
-import { LANG_LABEL } from '@/lib/settings';
+import LangSwitcher from './LangSwitcher';
 import AIStatus from './AIStatus';
 import Login from './Login';
 
@@ -16,7 +16,7 @@ const NAV = [
 ];
 
 export default function Shell({ children }: { children: React.ReactNode }) {
-  const { session, loading, global, saveGlobal, focus } = useApp();
+  const { session, loading, global, focus } = useApp();
   const path = usePathname();
 
   useEffect(() => {
@@ -36,19 +36,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
           <Link href="/" className="font-display text-xl font-extrabold tracking-tight">
             ez<span className="text-accent">peak</span>
           </Link>
-          {global.languages.length > 1 && (
-            <div className="flex rounded-full border border-line bg-surface p-1 text-sm font-semibold">
-              {global.languages.map((l) => (
-                <button
-                  key={l}
-                  onClick={() => saveGlobal({ language: l })}
-                  className={`rounded-full px-3 py-1 transition ${global.language === l ? 'bg-accent text-accent-ink' : 'text-muted'}`}
-                >
-                  {LANG_LABEL[l]}
-                </button>
-              ))}
-            </div>
-          )}
+          <LangSwitcher />
         </header>
       )}
       <main className={`flex-1 px-4 ${studying ? 'py-3' : 'pt-5 pb-28'}`}>{children}</main>

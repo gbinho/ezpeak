@@ -75,7 +75,7 @@ export default function Goal() {
 
   return (
     <div className="space-y-6">
-      <p className="text-sm text-muted">O que você quer alcançar em {LANG_LABEL[global.language].split(' ')[1].toLowerCase()}?</p>
+      <p className="text-sm text-muted">O que você quer alcançar em {LANG_LABEL[global.language].toLowerCase()}?</p>
       <div className="card divide-y divide-line overflow-hidden">
         {CEFR.map((c) => {
           const on = c === goal;

@@ -1,7 +1,7 @@
 'use client';
 import type { Lang } from './types';
 
-const VOICE_LANG: Record<Lang, string> = { en: 'en-US', ja: 'ja-JP' };
+const VOICE_LANG: Record<Lang, string> = { en: 'en-US', ja: 'ja-JP', ru: 'ru-RU', fr: 'fr-FR' };
 
 function pickVoice(lang: Lang) {
   const voices = window.speechSynthesis.getVoices();

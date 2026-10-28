@@ -9,7 +9,7 @@ import { callAI } from '@/lib/ai';
 import { useApp } from '@/lib/app-context';
 import { similarity, speak } from '@/lib/speech';
 import { supabase } from '@/lib/supabase';
-import type { Item } from '@/lib/types';
+import type { Item, Lang } from '@/lib/types';
 
 type Mode = 'build' | 'dictation' | 'pairs' | 'speak' | 'weak';
 
@@ -65,7 +65,7 @@ export default function PracticePage() {
 
   switch (mode) {
     case 'build':
-      return <Build title={title} onBack={back} items={items.filter((i) => (lang === 'en' ? i.text_original.includes(' ') || i.example : i.text_romanized?.includes(' ')))} lang={lang} />;
+      return <Build title={title} onBack={back} items={items.filter((i) => (lang !== 'ja' ? i.text_original.includes(' ') || i.example : i.text_romanized?.includes(' ')))} lang={lang} />;
     case 'dictation':
       return <Dictation title={title} onBack={back} items={items} lang={lang} rate={global.audioRate} />;
     case 'pairs':
@@ -89,13 +89,13 @@ function Result({ ok, children }: { ok: 'good' | 'warn' | 'bad'; children: React
 }
 
 // ---------- Montar a frase ----------
-function Build({ items, lang, ...p }: Base & { items: Item[]; lang: 'en' | 'ja' }) {
+function Build({ items, lang, ...p }: Base & { items: Item[]; lang: Lang }) {
   const pick = useCallback(() => {
     const it = items[Math.floor(Math.random() * items.length)];
     if (!it) return null;
     // Inglês: usa a frase de exemplo se existir. Japonês: blocos em romaji.
-    const target = lang === 'en' ? (it.example ?? it.text_original) : it.text_romanized!;
-    const pt = lang === 'en' ? (it.example ? it.example_pt! : it.translation_pt) : it.translation_pt;
+    const target = lang !== 'ja' ? (it.example ?? it.text_original) : it.text_romanized!;
+    const pt = lang !== 'ja' ? (it.example ? it.example_pt! : it.translation_pt) : it.translation_pt;
     return { it, target, pt, words: shuffle(target.split(' ')) };
   }, [items, lang]);
   const [q, setQ] = useState(pick);
@@ -118,7 +118,7 @@ function Build({ items, lang, ...p }: Base & { items: Item[]; lang: 'en' | 'ja' 
                 <button key={i} disabled={chosen.includes(i)} onClick={() => setChosen([...chosen, i])} className="rounded-xl border border-line bg-surface px-3.5 py-2.5 font-semibold transition disabled:opacity-20">{w}</button>
               ))}
             </div>
-            <button className="btn-primary w-full" disabled={chosen.length !== q.words.length} onClick={() => { setChecked(answer === q.target); speak(lang === 'en' ? q.target : q.it.text_original, lang); }}>Verificar</button>
+            <button className="btn-primary w-full" disabled={chosen.length !== q.words.length} onClick={() => { setChecked(answer === q.target); speak(lang !== 'ja' ? q.target : q.it.text_original, lang); }}>Verificar</button>
           </>
         ) : (
           <button className="btn-primary w-full" onClick={next}>Próxima</button>
@@ -145,7 +145,7 @@ function Build({ items, lang, ...p }: Base & { items: Item[]; lang: 'en' | 'ja' 
 }
 
 // ---------- Ditado ----------
-function Dictation({ items, lang, rate, ...p }: Base & { items: Item[]; lang: 'en' | 'ja'; rate: number }) {
+function Dictation({ items, lang, rate, ...p }: Base & { items: Item[]; lang: Lang; rate: number }) {
   const pick = useCallback(() => items[Math.floor(Math.random() * items.length)] ?? null, [items]);
   const [it, setIt] = useState<Item | null>(pick);
   const [typed, setTyped] = useState('');
@@ -187,7 +187,7 @@ function Dictation({ items, lang, rate, ...p }: Base & { items: Item[]; lang: 'e
 }
 
 // ---------- Pares mínimos ----------
-function Pairs({ items, lang, ...p }: Base & { items: Item[]; lang: 'en' | 'ja' }) {
+function Pairs({ items, lang, ...p }: Base & { items: Item[]; lang: Lang }) {
   const pairs = useMemo(() => {
     const out: [Item, Item][] = [];
     for (let i = 0; i + 1 < items.length; i += 2) out.push([items[i], items[i + 1]]);
@@ -234,7 +234,7 @@ function Pairs({ items, lang, ...p }: Base & { items: Item[]; lang: 'en' | 'ja' 
 }
 
 // ---------- Treino de pronúncia ----------
-function Speak({ items, lang, rate, ...p }: Base & { items: Item[]; lang: 'en' | 'ja'; rate: number }) {
+function Speak({ items, lang, rate, ...p }: Base & { items: Item[]; lang: Lang; rate: number }) {
   const [i, setI] = useState(0);
   const it = items[i % Math.max(1, items.length)];
   if (!it) return <Loading {...p} />;
@@ -265,7 +265,7 @@ function Speak({ items, lang, rate, ...p }: Base & { items: Item[]; lang: 'en' |
 // ---------- Frases com seus pontos fracos (IA) ----------
 type Sentence = { text: string; romanized: string | null; pt: string; respelling_pt: string };
 
-function Weak({ lang, ...p }: Base & { lang: 'en' | 'ja' }) {
+function Weak({ lang, ...p }: Base & { lang: Lang }) {
   const { decks } = useApp();
   const [sentences, setSentences] = useState<Sentence[] | null>(null);
   const [error, setError] = useState<string | null>(null);

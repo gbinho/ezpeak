@@ -1,5 +1,10 @@
 // Gera o SQL de seed: node content/to-sql.mjs > content/seed.sql
-import { decks } from './seed.mjs';
+import { decks as base } from './seed.mjs';
+import { decks as more } from './seed-ru-fr.mjs';
+
+// node content/to-sql.mjs [idiomas…] — sem argumentos gera tudo.
+const only = process.argv.slice(2);
+const decks = [...base, ...more].filter((d) => !only.length || only.includes(d.language));
 
 const q = (v) => (v == null ? 'null' : `'${String(v).replace(/'/g, "''")}'`);
 

@@ -1,4 +1,5 @@
-export type Lang = 'en' | 'ja';
+export const LANGS = ['en', 'ja', 'ru', 'fr'] as const;
+export type Lang = (typeof LANGS)[number];
 
 export const CARD_TYPES = ['recognition', 'production', 'listening', 'pronunciation', 'reading', 'cloze'] as const;
 export type CardType = (typeof CARD_TYPES)[number];

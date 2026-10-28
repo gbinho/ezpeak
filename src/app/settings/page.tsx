@@ -8,11 +8,12 @@ import SettingsForm from '@/components/SettingsForm';
 import { useApp } from '@/lib/app-context';
 import { DEFAULTS, LANG_LABEL, LEVELS, type GlobalSettings, type Level } from '@/lib/settings';
 import { supabase } from '@/lib/supabase';
-import { CARD_TYPES, type Lang } from '@/lib/types';
+import { CARD_TYPES, LANGS, type Lang } from '@/lib/types';
+import Flag from '@/components/Flag';
 
 // Cada seção abre sua própria tela. `form` = título do grupo no SettingsForm.
 const SECTIONS: { id: string; icon: LucideIcon; title: string; form?: string; summary: (g: GlobalSettings) => string }[] = [
-  { id: 'langs', icon: LanguagesIcon, title: 'Idiomas e nível', summary: (g) => g.languages.map((l) => LANG_LABEL[l].split(' ')[1]).join(', ') },
+  { id: 'langs', icon: LanguagesIcon, title: 'Idiomas e nível', summary: (g) => g.languages.map((l) => LANG_LABEL[l]).join(', ') },
   { id: 'goal', icon: Target, title: 'Objetivo', summary: (g) => g.goals[g.language] ?? 'B1' },
   { id: 'pace', icon: CalendarDays, title: 'Ritmo diário', form: 'Ritmo diário', summary: (g) => `${g.newPerDay} novos por dia` },
   { id: 'freq', icon: Repeat, title: 'Frequência dos cards', form: 'Frequência dos cards', summary: (g) => `Retenção ${Math.round(g.retention * 100)}%` },
@@ -78,6 +79,7 @@ function Languages() {
     <div className="card divide-y divide-line">
       {global.languages.map((l) => (
         <div key={l} className="flex items-center gap-3 p-4">
+          <Flag lang={l} />
           <span className="flex-1 font-semibold">{LANG_LABEL[l]}</span>
           <select
             className="field w-auto py-1.5"
@@ -92,7 +94,7 @@ function Languages() {
           {global.languages.length > 1 && <button className="px-1 text-muted" aria-label={`Remover ${LANG_LABEL[l]}`} onClick={() => remove(l)}>Remover</button>}
         </div>
       ))}
-      {global.languages.length < 2 && <button className="w-full p-4 text-left font-semibold text-accent" onClick={() => setAdding(true)}>Adicionar idioma</button>}
+      {global.languages.length < LANGS.length && <button className="w-full p-4 text-left font-semibold text-accent" onClick={() => setAdding(true)}>Adicionar idioma</button>}
     </div>
   );
 }

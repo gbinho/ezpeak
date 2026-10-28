@@ -5,6 +5,7 @@ import { PlayButton } from '@/components/Audio';
 import Respelling from '@/components/Respelling';
 import { callAI } from '@/lib/ai';
 import { useApp } from '@/lib/app-context';
+import { LANG_LABEL } from '@/lib/settings';
 import { supabase } from '@/lib/supabase';
 import type { Item } from '@/lib/types';
 
@@ -61,9 +62,9 @@ export default function CreatePage() {
     <div className="space-y-5">
       <Link href="/" className="text-sm text-muted">← Início</Link>
       <h1 className="font-display text-3xl font-extrabold">Criar card</h1>
-      <p className="text-muted">Digite uma palavra ou frase, em português ou em {lang === 'en' ? 'inglês' : 'japonês'}. A IA preenche tradução, pronúncia literal e exemplo. Você revisa antes de salvar.</p>
+      <p className="text-muted">Digite uma palavra ou frase, em português ou em {LANG_LABEL[lang].toLowerCase()}. A IA preenche tradução, pronúncia literal e exemplo. Você revisa antes de salvar.</p>
       <form onSubmit={(e) => { e.preventDefault(); generate(); }} className="flex gap-2">
-        <input className="field" placeholder={lang === 'en' ? 'ex.: "cachorro" ou "I miss you"' : 'ex.: "gato" ou "おはよう"'} value={word} onChange={(e) => setWord(e.target.value)} required />
+        <input className="field" placeholder='ex.: "cachorro"' value={word} onChange={(e) => setWord(e.target.value)} required />
         <button className="btn-primary shrink-0" disabled={busy}>{busy && !draft ? '…' : '✨ Gerar'}</button>
       </form>
       <div className="flex rounded-xl border border-line bg-surface p-1 text-sm font-semibold">
@@ -85,8 +86,8 @@ export default function CreatePage() {
               <PlayButton text={draft.text_original} lang={lang} />
             </div>
           )}
-          <Field label={lang === 'en' ? 'Inglês' : 'Japonês (kana/kanji)'} value={draft.text_original} onChange={set('text_original')} />
-          {lang === 'ja' && <Field label="Romaji" value={draft.text_romanized} onChange={set('text_romanized')} />}
+          <Field label={LANG_LABEL[lang]} value={draft.text_original} onChange={set('text_original')} />
+          {(lang === 'ja' || lang === 'ru') && <Field label="Romanização" value={draft.text_romanized} onChange={set('text_romanized')} />}
           <Field label="Tradução" value={draft.translation_pt} onChange={set('translation_pt')} />
           <Field label="Pronúncia literal (tônica em MAIÚSCULAS)" value={draft.respelling_pt} onChange={set('respelling_pt')} />
           <Field label="Dica de pronúncia" value={draft.tip_pt} onChange={set('tip_pt')} />

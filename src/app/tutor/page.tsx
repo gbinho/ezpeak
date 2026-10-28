@@ -5,6 +5,8 @@ import { PlayButton } from '@/components/Audio';
 import Respelling from '@/components/Respelling';
 import { callAI } from '@/lib/ai';
 import { useApp } from '@/lib/app-context';
+import { LANG_LABEL } from '@/lib/settings';
+import type { Lang } from '@/lib/types';
 import { canRecognize, recognize } from '@/lib/speech';
 import { supabase } from '@/lib/supabase';
 
@@ -22,6 +24,8 @@ type Msg = { role: 'user'; content: string } | { role: 'assistant'; content: str
 
 const SCENARIOS = {
   en: ['Pedir comida num restaurante', 'Check-in no hotel', 'Imigração no aeroporto', 'Pedir informação na rua', 'Conversa com um colega novo'],
+  ru: ['Pedir comida num café', 'Comprar bilhete de metrô', 'Se apresentar a alguém', 'Pedir informação na rua'],
+  fr: ['Pedir num café em Paris', 'Check-in no hotel', 'Comprar pão na padaria', 'Pedir informação na rua'],
   ja: ['Pedir lámen num restaurante', 'Comprar bilhete de trem', 'Konbini (loja de conveniência)', 'Se apresentar a alguém', 'Pedir informação na estação'],
 };
 
@@ -98,7 +102,7 @@ export default function TutorPage() {
     return (
       <div className="space-y-4">
         <h1 className="font-display text-3xl font-extrabold">Tutor de conversa</h1>
-        <p className="text-muted">Pratique uma situação real. O tutor responde em {lang === 'en' ? 'inglês' : 'japonês'} com tradução e pronúncia literal, e corrige seus erros.</p>
+        <p className="text-muted">Pratique uma situação real. O tutor responde em {LANG_LABEL[lang].toLowerCase()} com tradução e pronúncia literal, e corrige seus erros.</p>
         <div className="space-y-2">
           {SCENARIOS[lang].map((s) => (
             <button key={s} className="card w-full p-4 text-left font-semibold" onClick={() => { setScenario(s); send([], s); }}>{s}</button>
@@ -149,7 +153,7 @@ export default function TutorPage() {
               )}
               <form onSubmit={(e) => { e.preventDefault(); submit(input); }} className="flex gap-2">
                 {canRecognize() && <button type="button" onClick={speakInput} className="btn-ghost shrink-0 px-3" aria-label="Falar">{mic}</button>}
-                <input className="field" value={input} onChange={(e) => setInput(e.target.value)} placeholder={lang === 'en' ? 'Responda em inglês…' : 'Japonês ou romaji…'} />
+                <input className="field" value={input} onChange={(e) => setInput(e.target.value)} placeholder={`Responda em ${LANG_LABEL[lang].toLowerCase()}…`} />
                 <button className="btn-primary shrink-0" disabled={busy || !input.trim()}>Enviar</button>
               </form>
             </>
@@ -190,7 +194,7 @@ export default function TutorPage() {
 }
 
 /** Monta a resposta tocando nos blocos sugeridos pelo tutor (com alguns blocos de distração). */
-function Blocks({ reply, lang, onSend }: { reply: TutorReply; lang: 'en' | 'ja'; onSend: (t: string) => void }) {
+function Blocks({ reply, lang, onSend }: { reply: TutorReply; lang: Lang; onSend: (t: string) => void }) {
   const [bank] = useState(() => {
     const blocks = reply.blocks?.length ? reply.blocks : reply.suggestion.split(' ');
     return [...blocks, ...(reply.distractors ?? [])].sort(() => Math.random() - 0.5);
