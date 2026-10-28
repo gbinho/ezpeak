@@ -1,26 +1,98 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --bg: #f7f4ee;
+  --surface: #ffffff;
+  --surface-2: #efeae0;
+  --ink: #1d1a16;
+  --muted: #6b645a;
+  --line: #e2dbcd;
+  --accent: #e2552d;
+  --accent-ink: #ffffff;
+  --accent-soft: #fbe3da;
+  --good: #2f8a57;
+  --good-soft: #dcf0e3;
+  --warn: #c78a12;
+  --warn-soft: #f8ecd0;
+  --bad: #c43b3b;
+  --bad-soft: #f7dddd;
+  --blue: #2f6bd8;
+  --blue-soft: #dfe8fa;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --bg: #15130f;
+    --surface: #1f1c17;
+    --surface-2: #2a261f;
+    --ink: #f1ece3;
+    --muted: #a39b8e;
+    --line: #36312a;
+    --accent: #f0703f;
+    --accent-ink: #1a0f0a;
+    --accent-soft: #3c2219;
+    --good: #5cc085;
+    --good-soft: #1d3326;
+    --warn: #e2ab3d;
+    --warn-soft: #3a2f17;
+    --bad: #e86b6b;
+    --bad-soft: #3d2020;
+    --blue: #6d9af0;
+    --blue-soft: #1d2a42;
   }
 }
 
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+  --color-good: var(--good);
+  --color-good-soft: var(--good-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-bad: var(--bad);
+  --color-bad-soft: var(--bad-soft);
+  --color-blue: var(--blue);
+  --color-blue-soft: var(--blue-soft);
+  --font-sans: var(--font-body);
+  --font-display: var(--font-display);
+  --font-jp: var(--font-jp);
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body), system-ui, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@utility card {
+  @apply rounded-2xl border border-line bg-surface;
+}
+@utility btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 font-semibold transition active:scale-[0.98] disabled:opacity-50;
+}
+@utility btn-primary {
+  @apply btn bg-accent text-accent-ink;
+}
+@utility btn-ghost {
+  @apply btn border border-line bg-surface text-ink;
+}
+@utility chip {
+  @apply inline-flex items-center rounded-full bg-surface-2 px-2.5 py-1 text-xs font-medium text-muted;
+}
+@utility field {
+  @apply w-full rounded-xl border border-line bg-surface px-3 py-2.5 text-ink outline-none focus:border-accent;
+}
+@utility label {
+  @apply text-sm font-semibold text-ink;
+}
+@utility hint {
+  @apply text-xs text-muted;
 }

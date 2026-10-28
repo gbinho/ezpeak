@@ -1,103 +1,192 @@
-import Image from "next/image";
+'use client';
+import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import { useApp } from '@/lib/app-context';
+import { buildQueue, startOfToday } from '@/lib/queue';
+import { PRESETS } from '@/lib/settings';
+import { supabase } from '@/lib/supabase';
+import type { Deck } from '@/lib/types';
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const { decks, global, saveGlobal, settingsFor } = useApp();
+  const [counts, setCounts] = useState<{ due: number; fresh: number } | null>(null);
+  const [today, setToday] = useState({ minutes: 0, cards: 0, streak: 0 });
+  const [deckStats, setDeckStats] = useState<Record<string, { seen: number; total: number }>>({});
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  const langDecks = decks.filter((d) => d.language === global.language);
+  const active = langDecks.filter((d) => !global.disabledDecks.includes(d.id));
+
+  useEffect(() => {
+    if (!langDecks.length) return;
+    setCounts(null);
+    const s = settingsFor();
+    buildQueue({ decks: active, settingsFor, session: { ...s, sessionMode: 'time' } }).then((r) => setCounts(r.counts));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [global.language, global.disabledDecks.join(), decks.length]);
+
+  useEffect(() => {
+    (async () => {
+      const since = new Date(Date.now() - 400 * 86400000).toISOString();
+      const { data: logs } = await supabase.from('review_logs').select('created_at,elapsed_ms').gte('created_at', since).order('created_at', { ascending: false }).limit(5000);
+      const t0 = startOfToday().getTime();
+      const todayLogs = (logs ?? []).filter((l) => new Date(l.created_at).getTime() >= t0);
+      const days = new Set((logs ?? []).map((l) => dayKey(new Date(l.created_at))));
+      let streak = 0;
+      const d = new Date(t0);
+      if (!days.has(dayKey(d))) d.setDate(d.getDate() - 1); // hoje ainda não estudou: não quebra a sequência
+      while (days.has(dayKey(d))) {
+        streak++;
+        d.setDate(d.getDate() - 1);
+      }
+      setToday({ minutes: Math.round(todayLogs.reduce((a, l) => a + (l.elapsed_ms ?? 0), 0) / 60000), cards: todayLogs.length, streak });
+
+      const { data: items } = await supabase.from('items').select('id,deck_id');
+      const { data: ucs } = await supabase.from('user_cards').select('item_id,deck_id');
+      const seen = new Set((ucs ?? []).map((u) => u.item_id));
+      const st: Record<string, { seen: number; total: number }> = {};
+      for (const i of items ?? []) {
+        st[i.deck_id] ??= { seen: 0, total: 0 };
+        st[i.deck_id].total++;
+        if (seen.has(i.id)) st[i.deck_id].seen++;
+      }
+      setDeckStats(st);
+    })();
+  }, []);
+
+  if (!global.onboarded) return <Onboarding />;
+
+  const goal = global.dailyGoalMinutes;
+  const pending = counts ? counts.due + counts.fresh : null;
+
+  const toggle = (d: Deck) =>
+    saveGlobal({ disabledDecks: global.disabledDecks.includes(d.id) ? global.disabledDecks.filter((x) => x !== d.id) : [...global.disabledDecks, d.id] });
+
+  return (
+    <div className="space-y-6">
+      <section className="card overflow-hidden">
+        <div className="bg-accent p-5 text-accent-ink">
+          <p className="text-sm font-semibold opacity-90">Hoje</p>
+          <p className="font-display text-4xl font-extrabold">{pending === null ? '…' : pending === 0 ? 'Tudo em dia!' : `${pending} cards`}</p>
+          {counts && <p className="text-sm opacity-90">{counts.due} para revisar · {counts.fresh} novos</p>}
+          <Link href="/study" className="btn mt-4 w-full bg-accent-ink text-accent">{pending ? 'Começar sessão' : 'Revisão extra'}</Link>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+        <div className="grid grid-cols-3 divide-x divide-line text-center">
+          <Mini n={`🔥 ${today.streak}`} l="dias seguidos" />
+          <Mini n={today.cards} l="cards hoje" />
+          <div className="p-3">
+            <div className="font-display text-xl font-extrabold">{today.minutes}/{goal} min</div>
+            <div className="mx-auto mt-1 h-1.5 w-20 overflow-hidden rounded-full bg-surface-2">
+              <div className="h-full bg-good" style={{ width: `${Math.min(100, (today.minutes / goal) * 100)}%` }} />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div className="grid grid-cols-2 gap-3">
+        <Link href="/create" className="card p-4">
+          <div className="text-2xl">✨</div>
+          <div className="font-semibold">Criar card com IA</div>
+          <div className="hint">Digite qualquer palavra</div>
+        </Link>
+        <Link href="/study?extra=starred" className="card p-4">
+          <div className="text-2xl">★</div>
+          <div className="font-semibold">Revisar marcados</div>
+          <div className="hint">Não afeta o agendamento</div>
+        </Link>
+      </div>
+
+      <DeckSection title="🧳 Modo sobrevivência" decks={langDecks.filter((d) => d.is_survival)} stats={deckStats} disabled={global.disabledDecks} onToggle={toggle} />
+      <DeckSection title="Decks" decks={langDecks.filter((d) => !d.is_survival)} stats={deckStats} disabled={global.disabledDecks} onToggle={toggle} />
+    </div>
+  );
+}
+
+const dayKey = (d: Date) => {
+  const x = new Date(d.getTime() - 4 * 3600000);
+  return `${x.getFullYear()}-${x.getMonth()}-${x.getDate()}`;
+};
+
+function Mini({ n, l }: { n: string | number; l: string }) {
+  return (
+    <div className="p-3">
+      <div className="font-display text-xl font-extrabold">{n}</div>
+      <div className="text-xs text-muted">{l}</div>
+    </div>
+  );
+}
+
+function DeckSection({ title, decks, stats, disabled, onToggle }: { title: string; decks: Deck[]; stats: Record<string, { seen: number; total: number }>; disabled: string[]; onToggle: (d: Deck) => void }) {
+  if (!decks.length) return null;
+  return (
+    <section className="space-y-2">
+      <h2 className="font-display text-lg font-bold">{title}</h2>
+      {decks.map((d) => {
+        const st = stats[d.id];
+        const off = disabled.includes(d.id);
+        return (
+          <div key={d.id} className={`card flex items-center gap-3 p-3 ${off ? 'opacity-55' : ''}`}>
+            <Link href={`/decks/${d.id}`} className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <span className="truncate font-semibold">{d.title}</span>
+                {d.level && <span className="chip">{d.level}</span>}
+                {d.owner_id && <span className="chip">Meu</span>}
+              </div>
+              <div className="truncate text-sm text-muted">{d.description}</div>
+              {st && (
+                <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-surface-2">
+                  <div className="h-full bg-accent" style={{ width: `${(st.seen / st.total) * 100}%` }} />
+                </div>
+              )}
+            </Link>
+            <div className="flex flex-col items-end gap-1">
+              <Link href={`/study?deck=${d.id}`} className="chip bg-accent-soft text-accent">Estudar</Link>
+              <button onClick={() => onToggle(d)} className="text-xs text-muted">{off ? 'Ativar' : 'Pausar'}</button>
+            </div>
+          </div>
+        );
+      })}
+    </section>
+  );
+}
+
+function Onboarding() {
+  const { saveGlobal } = useApp();
+  const [lang, setLang] = useState<'en' | 'ja'>('en');
+  const [preset, setPreset] = useState('padrao');
+  const [goal, setGoal] = useState(10);
+  return (
+    <div className="space-y-6 pb-8">
+      <h1 className="font-display text-3xl font-extrabold">Bem-vindo! Vamos configurar.</h1>
+      <div className="space-y-2">
+        <p className="label">O que você quer aprender?</p>
+        <div className="grid grid-cols-2 gap-2">
+          {(['en', 'ja'] as const).map((l) => (
+            <button key={l} onClick={() => setLang(l)} className={`card p-4 text-left ${lang === l ? 'border-accent ring-2 ring-accent' : ''}`}>
+              <div className="text-3xl">{l === 'en' ? '🇺🇸' : '🇯🇵'}</div>
+              <div className="font-semibold">{l === 'en' ? 'Inglês' : 'Japonês'}</div>
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="space-y-2">
+        <p className="label">Qual ritmo?</p>
+        {PRESETS.map((p) => (
+          <button key={p.id} onClick={() => setPreset(p.id)} className={`card w-full p-3 text-left ${preset === p.id ? 'border-accent ring-2 ring-accent' : ''}`}>
+            <div className="font-semibold">{p.name}</div>
+            <div className="text-sm text-muted">{p.desc}</div>
+          </button>
+        ))}
+      </div>
+      <div className="space-y-2">
+        <p className="label">Meta diária: {goal} minutos</p>
+        <input type="range" min={5} max={60} step={5} value={goal} onChange={(e) => setGoal(+e.target.value)} className="w-full accent-[var(--accent)]" />
+      </div>
+      <button
+        className="btn-primary w-full"
+        onClick={() => saveGlobal({ language: lang, dailyGoalMinutes: goal, onboarded: true, ...PRESETS.find((p) => p.id === preset)!.values })}
+      >
+        Começar
+      </button>
     </div>
   );
 }
