@@ -64,11 +64,11 @@ export function canRecognize() {
   return !!(w.SpeechRecognition || w.webkitSpeechRecognition);
 }
 
-export function recognize(lang: Lang): { promise: Promise<{ transcripts: string[]; confidence: number }>; stop: () => void } {
+export function recognize(lang: Lang, locale?: string): { promise: Promise<{ transcripts: string[]; confidence: number }>; stop: () => void } {
   const w = window as unknown as Record<string, new () => SR>;
   const Ctor = w.SpeechRecognition || w.webkitSpeechRecognition;
   const rec = new Ctor();
-  rec.lang = VOICE_LANG[lang];
+  rec.lang = locale ?? VOICE_LANG[lang];
   rec.interimResults = false;
   rec.maxAlternatives = 5;
   rec.continuous = false;

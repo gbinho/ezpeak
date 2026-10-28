@@ -2,7 +2,7 @@ import { runLocal } from './local-ai';
 import { buildPrompt, finish } from './prompts';
 import { supabase } from './supabase';
 
-export type AIAction = 'generate' | 'explain' | 'tutor' | 'sentences';
+export type AIAction = 'generate' | 'explain' | 'tutor' | 'sentences' | 'comprehension';
 
 /** Tenta a IA do navegador primeiro; se não houver, usa a API (se configurada). */
 export async function callAI<T = { text: string }>(action: AIAction, payload: Record<string, unknown>): Promise<T> {

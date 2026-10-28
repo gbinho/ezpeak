@@ -1,5 +1,6 @@
 'use client';
-import { Ear, Headphones, Mic, Puzzle, Sparkles, type LucideIcon } from 'lucide-react';
+import { Ear, Headphones, Mic, Newspaper, Puzzle, Sparkles, type LucideIcon } from 'lucide-react';
+import Reading from '@/components/Reading';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Activity from '@/components/Activity';
 import { AudioBar, PlayButton } from '@/components/Audio';
@@ -11,9 +12,10 @@ import { similarity, speak } from '@/lib/speech';
 import { supabase } from '@/lib/supabase';
 import type { Item, Lang } from '@/lib/types';
 
-type Mode = 'build' | 'dictation' | 'pairs' | 'speak' | 'weak';
+type Mode = 'read' | 'build' | 'dictation' | 'pairs' | 'speak' | 'weak';
 
 const MODES: { id: Mode; title: string; desc: string; icon: LucideIcon }[] = [
+  { id: 'read', title: 'Ler notícias', desc: 'Leia, grife e aprenda', icon: Newspaper },
   { id: 'build', title: 'Montar a frase', desc: 'Ordene os blocos', icon: Puzzle },
   { id: 'dictation', title: 'Ditado', desc: 'Ouça e escreva', icon: Headphones },
   { id: 'pairs', title: 'Pares mínimos', desc: 'Qual você ouviu?', icon: Ear },
@@ -44,7 +46,7 @@ export default function PracticePage() {
             <button
               key={m.id}
               onClick={() => setMode(m.id)}
-              className={`card flex p-4 text-left transition hover:border-accent active:scale-[0.98] ${i === MODES.length - 1 ? 'col-span-2 items-center gap-4' : 'aspect-square flex-col justify-between'}`}
+              className={`card flex p-4 text-left transition hover:border-accent active:scale-[0.98] ${MODES.length % 2 && i === MODES.length - 1 ? 'col-span-2 items-center gap-4' : 'aspect-square flex-col justify-between'}`}
             >
               <span className="grid h-12 w-12 place-items-center rounded-2xl bg-accent-soft text-accent">
                 <m.icon className="h-6 w-6" strokeWidth={2} aria-hidden />
@@ -64,6 +66,8 @@ export default function PracticePage() {
   const pronDeck = decks.find((d) => d.language === lang && d.theme === 'pronuncia');
 
   switch (mode) {
+    case 'read':
+      return <Reading lang={lang} onBack={back} />;
     case 'build':
       return <Build title={title} onBack={back} items={items.filter((i) => (lang !== 'ja' ? i.text_original.includes(' ') || i.example : i.text_romanized?.includes(' ')))} lang={lang} />;
     case 'dictation':

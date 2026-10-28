@@ -72,6 +72,19 @@ ${RESPELLING_RULES}`,
         messages: history.length ? history : [{ role: 'user', content: '(comece a conversa)' }],
       };
     }
+    case 'comprehension': {
+      const text = String(body.article ?? '').slice(0, 3000);
+      const summary = String(body.summary ?? '').slice(0, 1000);
+      return {
+        json: true,
+        maxTokens: 500,
+        system: 'Você avalia se um aluno brasileiro entendeu uma notícia. Seja gentil e direto, em português. Responda APENAS com JSON.',
+        messages: [{
+          role: 'user',
+          content: `Notícia (em ${L}):\n${text}\n\nO que o aluno disse que entendeu:\n${summary}\n\nJSON: {"score": número 0-100 (quanto da ideia principal ele captou), "got": string (o que ele entendeu certo, 1 frase), "missed": string (o ponto importante que faltou, 1 frase, ou ""), "tip": string (uma dica curta para a próxima leitura)}`,
+        }],
+      };
+    }
     default:
       throw new Error('Ação desconhecida');
   }
