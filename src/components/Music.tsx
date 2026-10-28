@@ -1,5 +1,5 @@
 'use client';
-import { ExternalLink, Pause, Play, Repeat1, Search, Volume2, VolumeX } from 'lucide-react';
+import { ExternalLink, Pause, Play, Repeat1, Search, SkipForward, Volume2, VolumeX } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useApp } from '@/lib/app-context';
 import { loadExcerpt, type Excerpt } from '@/lib/lyrics';
@@ -44,6 +44,7 @@ export default function Music({ lang, onBack }: { lang: Lang; onBack: () => void
   const audio = useRef<HTMLAudioElement>(null);
   const [volume, setVolume] = useState(0.8);
   const fadeRef = useRef(0);
+  const played = useRef(new Set<number>());
 
   /** Fade de volume em ~350 ms (entrada e saída suaves). */
   function fade(to: number, then?: () => void) {
@@ -161,6 +162,24 @@ export default function Music({ lang, onBack }: { lang: Lang; onBack: () => void
 
   const back = () => { pause(); setSong(null); };
 
+  /** Próxima música: outra do mesmo artista se houver; senão, qualquer uma da busca. */
+  async function next() {
+    if (!song) return;
+    played.current.add(song.id);
+    let pool = (songs ?? []).filter((s) => !played.current.has(s.id) && s.title.toLowerCase() !== song.title.toLowerCase());
+    if (!pool.some((s) => s.artist === song.artist)) {
+      const j = await fetch(`/api/music?q=${encodeURIComponent(song.artist)}`).then((r) => r.json());
+      const more = ((j.items ?? []) as Song[]).filter((s) => !played.current.has(s.id) && s.title.toLowerCase() !== song.title.toLowerCase());
+      setSongs((cur) => [...(cur ?? []), ...more.filter((m) => !(cur ?? []).some((c) => c.id === m.id))]);
+      pool = [...pool, ...more];
+    }
+    const same = pool.filter((s) => s.artist === song.artist);
+    const from = same.length ? same : pool;
+    if (!from.length) return;
+    pause();
+    open(from[Math.floor(Math.random() * from.length)]);
+  }
+
   // ---------- resultado ----------
   if (done)
     return (
@@ -223,6 +242,9 @@ export default function Music({ lang, onBack }: { lang: Lang; onBack: () => void
               <Repeat1 className="h-5 w-5" />
             </button>
             <button onClick={() => setSlow(!slow)} className={`btn-ghost shrink-0 px-3 text-sm tabular-nums ${slow ? 'text-accent' : ''}`}>{slow ? '0.75×' : '1×'}</button>
+            <button onClick={next} className="btn-ghost shrink-0" aria-label="Próxima música" title="Próxima música">
+              <SkipForward className="h-5 w-5" />
+            </button>
             <button className="btn-primary flex-1" onClick={() => { pause(); setDone(true); }}>Terminei</button>
           </div>
           </>
