@@ -6,6 +6,7 @@ import { loadExcerpt, type Excerpt } from '@/lib/lyrics';
 import { wordsToCards } from '@/lib/personal-deck';
 import { speak } from '@/lib/speech';
 import { toPt } from '@/lib/translate';
+import { useTrack } from '@/lib/track';
 import type { Lang } from '@/lib/types';
 import Activity from './Activity';
 
@@ -27,6 +28,7 @@ function tokens(text: string, lang: Lang) {
 
 export default function Music({ lang, onBack }: { lang: Lang; onBack: () => void }) {
   const { session, global, saveGlobal } = useApp();
+  useTrack('music');
   const [q, setQ] = useState('');
   const [songs, setSongs] = useState<Song[] | null>(null);
   const [song, setSong] = useState<Song | null>(null);

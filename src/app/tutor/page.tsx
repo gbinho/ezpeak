@@ -6,6 +6,7 @@ import Respelling from '@/components/Respelling';
 import { callAI } from '@/lib/ai';
 import { useApp } from '@/lib/app-context';
 import { LANG_LABEL } from '@/lib/settings';
+import { useTrack } from '@/lib/track';
 import type { Lang } from '@/lib/types';
 import { canRecognize, recognize } from '@/lib/speech';
 import { supabase } from '@/lib/supabase';
@@ -33,6 +34,7 @@ export default function TutorPage() {
   const { global, session } = useApp();
   const lang = global.language;
   const [scenario, setScenario] = useState<string | null>(null);
+  useTrack(scenario ? 'tutor' : null);
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [input, setInput] = useState('');
   const [mode, setMode] = useState<'write' | 'blocks'>('blocks');

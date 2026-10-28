@@ -2,6 +2,7 @@
 import { Camera, ChevronRight, Star } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
+import ActivityChart from '@/components/ActivityChart';
 import { GoalPath, useGoal } from '@/components/Goal';
 import { useApp } from '@/lib/app-context';
 import { estimateLevel, GOALS, loadProgress, type Progress } from '@/lib/progress';
@@ -61,10 +62,9 @@ export default function ProfilePage() {
         />
       </header>
 
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-2 gap-2">
         <Tile n={p?.known ?? '…'} l="palavras" />
         <Tile n={level ?? 'Pré-A1'} l="nível estimado" />
-        <Tile n={p ? `${p.minutesWeek} min` : '…'} l="nos últimos 7 dias" />
       </div>
 
       <Link href="/settings?s=goal" className="card block space-y-3 p-4">
@@ -75,21 +75,7 @@ export default function ProfilePage() {
         {p && <GoalPath known={p.known} goal={goal} />}
       </Link>
 
-      <section className="space-y-2">
-        <h2 className="text-sm font-semibold text-muted">Últimas atividades</h2>
-        <div className="card divide-y divide-line">
-          {p?.recent.length ? (
-            p.recent.map((r) => (
-              <div key={r.day} className="flex justify-between px-4 py-2.5 text-sm">
-                <span className="capitalize">{r.day}</span>
-                <span className="text-muted tabular-nums">{r.cards} cards · {r.minutes} min</span>
-              </div>
-            ))
-          ) : (
-            <p className="px-4 py-3 text-sm text-muted">{p ? 'Nenhuma atividade ainda.' : 'Carregando…'}</p>
-          )}
-        </div>
-      </section>
+      <ActivityChart />
 
       <Link href="/study?extra=starred" className="flex items-center gap-2 text-sm font-semibold text-accent">
         <Star className="h-4 w-4" /> Revisar cards marcados

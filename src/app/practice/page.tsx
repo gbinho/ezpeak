@@ -9,6 +9,7 @@ import PronunciationCheck from '@/components/PronunciationCheck';
 import Respelling from '@/components/Respelling';
 import { callAI } from '@/lib/ai';
 import { useApp } from '@/lib/app-context';
+import { useTrack } from '@/lib/track';
 import { similarity, speak } from '@/lib/speech';
 import { supabase } from '@/lib/supabase';
 import type { Item, Lang } from '@/lib/types';
@@ -31,6 +32,8 @@ export default function PracticePage() {
   const { global, decks } = useApp();
   const lang = global.language;
   const [mode, setMode] = useState<Mode | null>(null);
+  // Leitura e música registram por conta própria.
+  useTrack(mode && mode !== 'read' && mode !== 'music' ? 'practice' : null);
   const [items, setItems] = useState<Item[]>([]);
 
   useEffect(() => {

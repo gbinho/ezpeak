@@ -6,6 +6,7 @@ import { useApp } from '@/lib/app-context';
 import { personalDeckId, wordsToCards } from '@/lib/personal-deck';
 import { canRecognize, makeUtterance, recognize, speak } from '@/lib/speech';
 import { toPt } from '@/lib/translate';
+import { useTrack } from '@/lib/track';
 import type { Lang } from '@/lib/types';
 import Activity from './Activity';
 
@@ -29,6 +30,7 @@ function tokens(text: string, lang: Lang) {
 
 export default function Reading({ lang, onBack }: { lang: Lang; onBack: () => void }) {
   const { session, global, saveGlobal } = useApp();
+  useTrack('reading');
   const [step, setStep] = useState<Step>('list');
   const [items, setItems] = useState<News[] | null>(null);
   const [news, setNews] = useState<News | null>(null);

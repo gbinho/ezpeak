@@ -18,6 +18,12 @@
   --bad-soft: #f7dddd;
   --blue: #2f6bd8;
   --blue-soft: #dfe8fa;
+  /* séries dos gráficos (ordem fixa, validada para daltonismo) */
+  --s1: #2a78d6;
+  --s2: #eb6834;
+  --s3: #1baf7a;
+  --s4: #eda100;
+  --s5: #e87ba4;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -39,6 +45,11 @@
     --bad-soft: #3d2020;
     --blue: #6d9af0;
     --blue-soft: #1d2a42;
+    --s1: #3987e5;
+    --s2: #d95926;
+    --s3: #199e70;
+    --s4: #c98500;
+    --s5: #d55181;
   }
 }
 
