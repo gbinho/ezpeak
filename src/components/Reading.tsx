@@ -14,6 +14,8 @@ type News = { title: string; titlePt: string | null; url: string; date: string; 
 type Step = 'list' | 'read' | 'rate' | 'explain' | 'result';
 type Difficulty = 'fácil' | 'médio' | 'difícil';
 
+const TOPIC_LABEL: Record<string, string> = { geral: 'Geral', mundo: 'Mundo', tecnologia: 'Tecnologia', ciencia: 'Ciência', negocios: 'Negócios', cultura: 'Cultura', esportes: 'Esportes' };
+
 // Dificuldades que a pessoa pode apontar, e o que o app sugere para cada uma.
 const REASONS = [
   { id: 'words', label: 'Muitas palavras que eu não conhecia', tip: 'As palavras grifadas viram cards. Revise-as nos próximos dias.' },
@@ -33,6 +35,8 @@ export default function Reading({ lang, onBack }: { lang: Lang; onBack: () => vo
   useTrack('reading');
   const [step, setStep] = useState<Step>('list');
   const [items, setItems] = useState<News[] | null>(null);
+  const [topic, setTopic] = useState('geral');
+  const [topics, setTopics] = useState<string[]>([]);
   const [news, setNews] = useState<News | null>(null);
   const [paras, setParas] = useState<string[] | null>(null);
   const [image, setImage] = useState<string | null>(null);
@@ -47,15 +51,18 @@ export default function Reading({ lang, onBack }: { lang: Lang; onBack: () => vo
   const [cards, setCards] = useState<{ done: number; total: number } | null>(null);
 
   useEffect(() => {
-    fetch(`/api/news?lang=${lang}`)
+    setItems(null);
+    setError(null);
+    fetch(`/api/news?lang=${lang}&topic=${topic}`)
       .then((r) => r.json())
       .then(async (j) => {
         if (!j.items) return setError(j.error);
         setItems(j.items);
+        setTopics(j.topics ?? []);
         const pt = await toPt(j.items.map((i: News) => i.title));
         setItems(j.items.map((i: News, k: number) => ({ ...i, titlePt: pt[k] })));
       });
-  }, [lang]);
+  }, [lang, topic]);
   useEffect(() => () => window.speechSynthesis?.cancel(), []);
 
   const text = useMemo(() => [news?.title ?? '', ...(paras ?? [])].join('\n'), [news, paras]);
@@ -163,6 +170,15 @@ export default function Reading({ lang, onBack }: { lang: Lang; onBack: () => vo
   if (step === 'list')
     return (
       <Activity title="Ler notícias" onBack={onBack}>
+        {topics.length > 1 && (
+          <div className="flex flex-wrap gap-1.5 pt-1 pb-2" role="tablist" aria-label="Temas">
+            {topics.map((t) => (
+              <button key={t} role="tab" aria-selected={topic === t} onClick={() => setTopic(t)} className={`rounded-full px-3 py-1.5 text-sm font-semibold transition ${topic === t ? 'bg-accent text-accent-ink' : 'bg-surface-2 text-muted'}`}>
+                {TOPIC_LABEL[t] ?? t}
+              </button>
+            ))}
+          </div>
+        )}
         {error && <p className="my-auto text-center text-sm text-muted">{error}</p>}
         {!items && !error && <p className="my-auto text-center text-muted">Buscando notícias…</p>}
         <div className="divide-y divide-line">

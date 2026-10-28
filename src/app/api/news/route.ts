@@ -1,12 +1,33 @@
 import { NextResponse } from 'next/server';
 
-// Feeds RSS gratuitos por idioma. O texto completo é extraído da página da matéria.
-const FEEDS: Record<string, string> = {
-  en: 'https://feeds.bbci.co.uk/news/world/rss.xml',
-  fr: 'https://www.france24.com/fr/rss',
-  ru: 'https://feeds.bbci.co.uk/russian/rss.xml',
-  ja: 'https://news.yahoo.co.jp/rss/topics/top-picks.xml',
+// Feeds RSS gratuitos por idioma e tema. O texto completo é extraído da página da matéria.
+const TOPICS: Record<string, Record<string, string>> = {
+  en: {
+    geral: 'https://feeds.bbci.co.uk/news/world/rss.xml',
+    tecnologia: 'https://feeds.bbci.co.uk/news/technology/rss.xml',
+    ciencia: 'https://feeds.bbci.co.uk/news/science_and_environment/rss.xml',
+    negocios: 'https://feeds.bbci.co.uk/news/business/rss.xml',
+    cultura: 'https://feeds.bbci.co.uk/news/entertainment_and_arts/rss.xml',
+    esportes: 'https://feeds.bbci.co.uk/sport/rss.xml',
+  },
+  fr: {
+    geral: 'https://www.france24.com/fr/rss',
+    tecnologia: 'https://www.france24.com/fr/%C3%A9co-tech/rss',
+    cultura: 'https://www.france24.com/fr/culture/rss',
+    esportes: 'https://www.france24.com/fr/sports/rss',
+  },
+  ru: { geral: 'https://feeds.bbci.co.uk/russian/rss.xml' },
+  ja: {
+    geral: 'https://news.yahoo.co.jp/rss/topics/top-picks.xml',
+    mundo: 'https://news.yahoo.co.jp/rss/topics/world.xml',
+    tecnologia: 'https://news.yahoo.co.jp/rss/topics/it.xml',
+    ciencia: 'https://news.yahoo.co.jp/rss/topics/science.xml',
+    negocios: 'https://news.yahoo.co.jp/rss/topics/business.xml',
+    cultura: 'https://news.yahoo.co.jp/rss/topics/entertainment.xml',
+    esportes: 'https://news.yahoo.co.jp/rss/topics/sports.xml',
+  },
 };
+const FEEDS = Object.values(TOPICS).flatMap((t) => Object.values(t));
 const UA = { 'User-Agent': 'Mozilla/5.0 (ezpeak reader)' };
 
 const decode = (s: string) =>
@@ -20,8 +41,9 @@ const decode = (s: string) =>
 
 const tag = (xml: string, name: string) => decode(xml.match(new RegExp(`<${name}[^>]*>([\\s\\S]*?)</${name}>`))?.[1] ?? '');
 
-async function list(lang: string) {
-  const xml = await (await fetch(FEEDS[lang], { headers: UA, next: { revalidate: 1800 } })).text();
+async function list(lang: string, topic: string) {
+  const feed = TOPICS[lang][topic] ?? TOPICS[lang].geral;
+  const xml = await (await fetch(feed, { headers: UA, next: { revalidate: 1800 } })).text();
   const items = [...xml.matchAll(/<item[\s>][\s\S]*?<\/item>/g)]
     .map(([it]) => ({ title: tag(it, 'title'), url: tag(it, 'link'), date: tag(it, 'pubDate'), summary: tag(it, 'description').replace(/<[^>]+>/g, ''), image: decode(it.match(/<(?:media:thumbnail|media:content|enclosure)[^>]*url="([^"]+)"/)?.[1] ?? '') || null }))
     .filter((i) => i.title && i.url.startsWith('http'))
@@ -49,17 +71,17 @@ async function article(url: string) {
 export async function GET(req: Request) {
   const q = new URL(req.url).searchParams;
   const lang = q.get('lang') ?? 'en';
-  if (!FEEDS[lang]) return NextResponse.json({ error: 'Idioma sem notícias' }, { status: 400 });
+  if (!TOPICS[lang]) return NextResponse.json({ error: 'Idioma sem notícias' }, { status: 400 });
   try {
     const url = q.get('url');
     if (url) {
       // Só busca páginas dos sites dos feeds.
       const host = new URL(url).hostname;
-      if (!Object.values(FEEDS).some((f) => host.split('.').slice(-2).join('.') === new URL(f).hostname.split('.').slice(-2).join('.') || /bbc\.(co\.uk|com)$/.test(host)))
+      if (!FEEDS.some((f) => host.split('.').slice(-2).join('.') === new URL(f).hostname.split('.').slice(-2).join('.') || /bbc\.(co\.uk|com)$/.test(host)))
         return NextResponse.json({ error: 'Fonte não permitida' }, { status: 400 });
       return NextResponse.json(await article(url));
     }
-    return NextResponse.json({ items: await list(lang) });
+    return NextResponse.json({ items: await list(lang, q.get('topic') ?? 'geral'), topics: Object.keys(TOPICS[lang]) });
   } catch {
     return NextResponse.json({ error: 'Não consegui buscar as notícias agora.' }, { status: 502 });
   }
