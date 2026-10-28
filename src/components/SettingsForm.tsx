@@ -6,22 +6,24 @@ type Props = {
   value: Settings;
   onChange: (patch: Partial<Settings>) => void;
   scope: 'global' | 'deck';
+  /** Mostra só uma seção (título do grupo), sem o título. */
+  only?: string;
 };
 
-export default function SettingsForm({ value: v, onChange, scope }: Props) {
+export default function SettingsForm({ value: v, onChange, scope, only }: Props) {
   const show = (k: keyof Settings) => scope === 'global' || DECK_OVERRIDABLE.includes(k);
   const typesOn = CARD_TYPES.filter((t) => v.cardTypes[t]).length;
 
   return (
-    <div className="space-y-6">
-      <Group title="Ritmo diário">
+    <div className={only ? "" : "space-y-6"}>
+      <Group title="Ritmo diário" only={only}>
         {show('newPerDay') && <Num label="Cards novos por dia" k="newPerDay" v={v} onChange={onChange} min={0} max={100} />}
         {show('maxReviewsPerDay') && <Num label="Máximo de revisões por dia" k="maxReviewsPerDay" v={v} onChange={onChange} min={10} max={1000} step={10} />}
         {show('newOrder') && <Select label="Ordem dos novos" k="newOrder" v={v} onChange={onChange} options={{ sequential: 'Ordem do deck', random: 'Aleatória' }} />}
         {show('mixMode') && <Select label="Novos e revisões" k="mixMode" v={v} onChange={onChange} options={{ mixed: 'Misturados', newFirst: 'Novos primeiro', reviewsFirst: 'Revisões primeiro' }} />}
       </Group>
 
-      <Group title="Frequência dos cards">
+      <Group title="Frequência dos cards" only={only}>
         {show('retention') && (
           <div className="space-y-1">
             <div className="flex justify-between">
@@ -45,7 +47,7 @@ export default function SettingsForm({ value: v, onChange, scope }: Props) {
       </Group>
 
       {show('cardTypes') && (
-        <Group title="Tipos de card">
+        <Group title="Tipos de card" only={only}>
           {CARD_TYPES.map((t: CardType) => (
             <label key={t} className="flex items-center justify-between py-1">
               <span className="label">{CARD_TYPE_LABEL[t]}</span>
@@ -56,13 +58,14 @@ export default function SettingsForm({ value: v, onChange, scope }: Props) {
         </Group>
       )}
 
-      <Group title="Cards difíceis">
+      <Group title="Cards difíceis" only={only}>
         {show('leechThreshold') && <Num label="Erros até virar card difícil" k="leechThreshold" v={v} onChange={onChange} min={2} max={20} />}
         {scope === 'global' && <Select label="Quando virar difícil" k="leechAction" v={v} onChange={onChange} options={{ warn: 'Avisar e sugerir dica', suspend: 'Suspender automaticamente' }} />}
         {scope === 'global' && <Toggle label="Esconder cards irmãos" hint="Não mostra outro tipo de card da mesma palavra no mesmo dia." k="burySiblings" v={v} onChange={onChange} />}
       </Group>
 
-      <Group title="Exibição e áudio">
+      <Group title="Exibição e áudio" only={only}>
+        {scope === 'global' && <Toggle label="Áudio" hint="Desligado, os cards de escuta não aparecem." k="audioOn" v={v} onChange={onChange} />}
         {show('autoplay') && <Select label="Tocar áudio automaticamente" k="autoplay" v={v} onChange={onChange} options={{ front: 'Na frente do card', back: 'Só na resposta', never: 'Nunca' }} />}
         {scope === 'global' && <Num label="Velocidade do áudio" k="audioRate" v={v} onChange={onChange} min={0.5} max={1.5} step={0.05} />}
         {show('crutch') && <Select label="Pronúncia literal na frente" k="crutch" v={v} onChange={onChange} options={{ auto: 'Automático (some com o tempo)', always: 'Sempre mostrar', tap: 'Esconder (tocar para ver)', never: 'Só na resposta' }} />}
@@ -72,12 +75,12 @@ export default function SettingsForm({ value: v, onChange, scope }: Props) {
 
       {scope === 'global' && (
         <>
-          <Group title="Sessão">
+          <Group title="Sessão" only={only}>
             <Select label="Tipo de sessão" k="sessionMode" v={v} onChange={onChange} options={{ count: 'Por quantidade', time: 'Por tempo' }} />
             {v.sessionMode === 'count' ? <Num label="Cards por sessão" k="sessionSize" v={v} onChange={onChange} min={5} max={200} step={5} /> : <Num label="Minutos por sessão" k="sessionMinutes" v={v} onChange={onChange} min={3} max={60} />}
             <Num label="Meta diária (minutos)" k="dailyGoalMinutes" v={v} onChange={onChange} min={5} max={120} step={5} />
           </Group>
-          <Group title="Avaliação de pronúncia">
+          <Group title="Avaliação de pronúncia" only={only}>
             <Toggle label="Sugerir nota pela pronúncia" k="autoGradePronunciation" v={v} onChange={onChange} />
             <Num label="Nota mínima para “Bom”" k="pronunciationGood" v={v} onChange={onChange} min={40} max={100} step={5} />
             <Num label="Nota mínima para “Fácil”" k="pronunciationEasy" v={v} onChange={onChange} min={50} max={100} step={1} />
@@ -88,10 +91,11 @@ export default function SettingsForm({ value: v, onChange, scope }: Props) {
   );
 }
 
-function Group({ title, children }: { title: string; children: React.ReactNode }) {
+function Group({ title, only, children }: { title: string; only?: string; children: React.ReactNode }) {
+  if (only && only !== title) return null;
   return (
     <section className="card space-y-4 p-4">
-      <h2 className="font-display text-lg font-bold">{title}</h2>
+      {!only && <h2 className="font-display text-lg font-bold">{title}</h2>}
       {children}
     </section>
   );

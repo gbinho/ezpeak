@@ -15,7 +15,7 @@ const NAV = [
 ];
 
 export default function Shell({ children }: { children: React.ReactNode }) {
-  const { session, loading, global, saveGlobal } = useApp();
+  const { session, loading, global, saveGlobal, focus } = useApp();
   const path = usePathname();
 
   useEffect(() => {
@@ -25,7 +25,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
   if (loading) return <div className="grid min-h-dvh place-items-center text-muted">Carregando…</div>;
   if (!session) return <Login />;
 
-  const studying = path.startsWith('/study') || !global.languages.length;
+  const studying = focus || path.startsWith('/study') || !global.languages.length;
 
   return (
     <div className="mx-auto flex min-h-dvh max-w-2xl flex-col">

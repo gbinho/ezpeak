@@ -15,6 +15,8 @@ type Ctx = {
   saveDeck: (deckId: string, patch: Partial<Settings> | null) => Promise<void>;
   settingsFor: (deckId?: string) => Settings;
   reloadDecks: () => Promise<void>;
+  focus: boolean;
+  setFocus: (v: boolean) => void;
 };
 
 const AppContext = createContext<Ctx | null>(null);
@@ -25,6 +27,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [global, setGlobal] = useState<GlobalSettings>(DEFAULTS);
   const [deckOverrides, setDeckOverrides] = useState<Record<string, Partial<Settings>>>({});
   const [decks, setDecks] = useState<Deck[]>([]);
+  const [focus, setFocus] = useState(false);
 
   const reloadDecks = useCallback(async () => {
     const { data } = await supabase.from('decks').select('*').order('sort_order');
@@ -96,7 +99,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AppContext.Provider
-      value={{ session, loading, global, deckOverrides, decks, saveGlobal, saveDeck, settingsFor, reloadDecks }}
+      value={{ session, loading, global, deckOverrides, decks, saveGlobal, saveDeck, settingsFor, reloadDecks, focus, setFocus }}
     >
       {children}
     </AppContext.Provider>

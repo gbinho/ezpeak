@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
+import Activity from '@/components/Activity';
 import { PlayButton } from '@/components/Audio';
 import Respelling from '@/components/Respelling';
 import { callAI } from '@/lib/ai';
@@ -110,14 +111,37 @@ export default function TutorPage() {
   const corrections = msgs.flatMap((m) => (m.role === 'assistant' ? m.data.corrections : []));
   const last = [...msgs].reverse().find((m) => m.role === 'assistant') as Extract<Msg, { role: 'assistant' }> | undefined;
 
-  return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <button className="text-sm text-muted" onClick={() => { setScenario(null); setMsgs([]); setSaved(0); }}>← Cenários</button>
-        <span className="chip">{scenario}</span>
-      </div>
+  const mic = (
+    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" aria-hidden>
+      <path d="M12 3a3 3 0 0 0-3 3v5a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3zM5 11a7 7 0 0 0 14 0M12 18v3" />
+    </svg>
+  );
 
-      <div className="space-y-3">
+  return (
+    <Activity
+      title={scenario}
+      onBack={() => { setScenario(null); setMsgs([]); setSaved(0); }}
+      footer={
+        <>
+          {corrections.length > 0 && (
+            <button className="w-full text-sm font-semibold text-accent disabled:text-muted" disabled={saved > 0} onClick={saveCorrections}>
+              {saved ? `${saved} cards criados em Minhas palavras` : `Salvar ${corrections.length} correções como cards`}
+            </button>
+          )}
+          {last?.data.suggestion && !busy && (
+            <button className="w-full truncate text-left text-sm text-muted" onClick={() => setInput(last.data.suggestion)}>
+              Sugestão: <span className="text-ink">{last.data.suggestion}</span>
+            </button>
+          )}
+          <form onSubmit={(e) => { e.preventDefault(); submit(input); }} className="flex gap-2">
+            {canRecognize() && <button type="button" onClick={speakInput} className="btn-ghost shrink-0 px-3" aria-label="Falar">{mic}</button>}
+            <input className="field" value={input} onChange={(e) => setInput(e.target.value)} placeholder={lang === 'en' ? 'Responda em inglês…' : 'Japonês ou romaji…'} />
+            <button className="btn-primary shrink-0" disabled={busy || !input.trim()}>Enviar</button>
+          </form>
+        </>
+      }
+    >
+      <div className="space-y-3 pt-2">
         {msgs.map((m, i) =>
           m.role === 'user' ? (
             <div key={i} className="ml-auto w-fit max-w-[85%] rounded-2xl rounded-br-sm bg-accent px-4 py-2.5 text-accent-ink">{m.content}</div>
@@ -145,22 +169,6 @@ export default function TutorPage() {
         {error && <p className="rounded-xl bg-bad-soft p-3 text-sm text-bad">{error}</p>}
         <div ref={bottom} />
       </div>
-
-      {last?.data.suggestion && !busy && (
-        <button className="chip" onClick={() => setInput(last.data.suggestion)}>💡 Sugestão: {last.data.suggestion}</button>
-      )}
-
-      <form onSubmit={(e) => { e.preventDefault(); submit(input); }} className="sticky bottom-24 flex gap-2 bg-bg py-2">
-        {canRecognize() && <button type="button" onClick={speakInput} className="btn-ghost shrink-0 px-3" aria-label="Falar">🎤</button>}
-        <input className="field" value={input} onChange={(e) => setInput(e.target.value)} placeholder={lang === 'en' ? 'Responda em inglês…' : 'Responda em japonês ou romaji…'} />
-        <button className="btn-primary shrink-0" disabled={busy}>Enviar</button>
-      </form>
-
-      {corrections.length > 0 && (
-        <button className="btn-ghost w-full" disabled={saved > 0} onClick={saveCorrections}>
-          {saved ? `✓ ${saved} cards criados em Minhas palavras` : `Transformar ${corrections.length} correções em cards`}
-        </button>
-      )}
-    </div>
+    </Activity>
   );
 }
