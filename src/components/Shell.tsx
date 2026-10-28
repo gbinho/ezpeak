@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 import { useApp } from '@/lib/app-context';
 import { LANG_LABEL } from '@/lib/settings';
+import AIStatus from './AIStatus';
 import Login from './Login';
 
 const NAV = [
@@ -29,6 +30,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="mx-auto flex min-h-dvh max-w-2xl flex-col">
+      <AIStatus />
       {!studying && (
         <header className="sticky top-0 z-10 flex items-center justify-between border-b border-line bg-bg/90 px-4 py-3 backdrop-blur">
           <Link href="/" className="font-display text-xl font-extrabold tracking-tight">
