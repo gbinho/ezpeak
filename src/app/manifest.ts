@@ -2,8 +2,8 @@ import type { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'FalaFácil',
-    short_name: 'FalaFácil',
+    name: 'ezpeak',
+    short_name: 'ezpeak',
     description: 'Inglês e japonês com flashcards e pronúncia escrita do jeito que se fala.',
     start_url: '/',
     display: 'standalone',

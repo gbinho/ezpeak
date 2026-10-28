@@ -9,10 +9,10 @@ const display = Bricolage_Grotesque({ variable: '--font-display', subsets: ['lat
 const jp = Noto_Sans_JP({ variable: '--font-jp', subsets: ['latin'], weight: ['400', '700'], preload: false });
 
 export const metadata: Metadata = {
-  title: 'FalaFácil',
+  title: 'ezpeak',
   description: 'Aprenda inglês e japonês com flashcards, áudio e pronúncia escrita do jeito que se fala.',
   manifest: '/manifest.webmanifest',
-  appleWebApp: { capable: true, title: 'FalaFácil', statusBarStyle: 'default' },
+  appleWebApp: { capable: true, title: 'ezpeak', statusBarStyle: 'default' },
 };
 
 export const viewport: Viewport = {

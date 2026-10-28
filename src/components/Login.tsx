@@ -25,7 +25,7 @@ export default function Login() {
   return (
     <div className="mx-auto flex min-h-dvh max-w-md flex-col justify-center px-6 py-10">
       <h1 className="font-display text-5xl font-extrabold tracking-tight">
-        Fala<span className="text-accent">Fácil</span>
+        ez<span className="text-accent">peak</span>
       </h1>
       <p className="mt-3 text-lg text-muted">Inglês e japonês com a pronúncia escrita do jeito que se fala.</p>
 

@@ -31,7 +31,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
       {!studying && (
         <header className="sticky top-0 z-10 flex items-center justify-between border-b border-line bg-bg/90 px-4 py-3 backdrop-blur">
           <Link href="/" className="font-display text-xl font-extrabold tracking-tight">
-            Fala<span className="text-accent">Fácil</span>
+            ez<span className="text-accent">peak</span>
           </Link>
           <div className="flex rounded-full border border-line bg-surface p-1 text-sm font-semibold">
             {(['en', 'ja'] as const).map((l) => (

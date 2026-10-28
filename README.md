@@ -1,4 +1,4 @@
-# Ezpeak (FalaFácil)
+# ezpeak
 
 App web para brasileiros aprenderem **inglês** e **japonês** com flashcards (FSRS), áudio, avaliação de pronúncia e pronúncia literal escrita do jeito que se fala.
 

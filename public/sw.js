@@ -1,5 +1,5 @@
 // Service worker simples: páginas e assets ficam em cache para abrir offline.
-const CACHE = 'falafacil-v1';
+const CACHE = 'ezpeak-v1';
 
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (e) => e.waitUntil(self.clients.claim()));
