@@ -23,7 +23,7 @@ const tag = (xml: string, name: string) => decode(xml.match(new RegExp(`<${name}
 async function list(lang: string) {
   const xml = await (await fetch(FEEDS[lang], { headers: UA, next: { revalidate: 1800 } })).text();
   return [...xml.matchAll(/<item[\s>][\s\S]*?<\/item>/g)]
-    .map(([it]) => ({ title: tag(it, 'title'), url: tag(it, 'link'), date: tag(it, 'pubDate'), summary: tag(it, 'description').replace(/<[^>]+>/g, '') }))
+    .map(([it]) => ({ title: tag(it, 'title'), url: tag(it, 'link'), date: tag(it, 'pubDate'), summary: tag(it, 'description').replace(/<[^>]+>/g, ''), image: decode(it.match(/<(?:media:thumbnail|media:content|enclosure)[^>]*url="([^"]+)"/)?.[1] ?? '') || null }))
     .filter((i) => i.title && i.url.startsWith('http'))
     .slice(0, 8);
 }
@@ -35,9 +35,10 @@ async function article(url: string) {
     .filter((p) => p.length > 40 && !/cookie|©|copyright|newsletter|javascript|記事全文を読む/i.test(p))
     // Menus coladas viram blocos longos sem espaço; texto de verdade tem espaços (exceto japonês).
     .filter((p) => /[぀-ヿ一-鿿]/.test(p) || (p.match(/ /g)?.length ?? 0) >= p.length / 15);
+  const image = decode(html.match(/<meta[^>]+property="og:image"[^>]+content="([^"]+)"/)?.[1] ?? html.match(/<meta[^>]+content="([^"]+)"[^>]+property="og:image"/)?.[1] ?? '') || null;
   const clean = paragraphs.filter((p) => !/^BBC News|Перейти к содержанию/.test(p));
   // Yahoo Japão: só o primeiro parágrafo é a matéria; o resto é ranking.
-  return url.includes('yahoo.co.jp') ? clean.slice(0, 1) : clean.slice(0, 8);
+  return { image, paragraphs: url.includes('yahoo.co.jp') ? clean.slice(0, 1) : clean.slice(0, 8) };
 }
 
 export async function GET(req: Request) {
@@ -51,7 +52,7 @@ export async function GET(req: Request) {
       const host = new URL(url).hostname;
       if (!Object.values(FEEDS).some((f) => host.split('.').slice(-2).join('.') === new URL(f).hostname.split('.').slice(-2).join('.') || /bbc\.(co\.uk|com)$/.test(host)))
         return NextResponse.json({ error: 'Fonte não permitida' }, { status: 400 });
-      return NextResponse.json({ paragraphs: await article(url) });
+      return NextResponse.json(await article(url));
     }
     return NextResponse.json({ items: await list(lang) });
   } catch {

@@ -8,7 +8,7 @@ import { canRecognize, recognize, speak } from '@/lib/speech';
 import type { Lang } from '@/lib/types';
 import Activity from './Activity';
 
-type News = { title: string; url: string; date: string; summary: string };
+type News = { title: string; url: string; date: string; summary: string; image: string | null };
 type Step = 'list' | 'read' | 'rate' | 'explain' | 'result';
 type Difficulty = 'fácil' | 'médio' | 'difícil';
 
@@ -32,6 +32,7 @@ export default function Reading({ lang, onBack }: { lang: Lang; onBack: () => vo
   const [items, setItems] = useState<News[] | null>(null);
   const [news, setNews] = useState<News | null>(null);
   const [paras, setParas] = useState<string[] | null>(null);
+  const [image, setImage] = useState<string | null>(null);
   const [marked, setMarked] = useState<Set<string>>(new Set());
   const [playing, setPlaying] = useState(false);
   const [listened, setListened] = useState(false);
@@ -53,8 +54,10 @@ export default function Reading({ lang, onBack }: { lang: Lang; onBack: () => vo
     setNews(n);
     setStep('read');
     setParas(null);
+    setImage(n.image);
     const j = await fetch(`/api/news?lang=${lang}&url=${encodeURIComponent(n.url)}`).then((r) => r.json());
     setParas(j.paragraphs?.length ? j.paragraphs : [n.summary]);
+    if (j.image) setImage(j.image);
   }
 
   async function listen() {
@@ -116,9 +119,15 @@ export default function Reading({ lang, onBack }: { lang: Lang; onBack: () => vo
         {!items && !error && <p className="my-auto text-center text-muted">Buscando notícias…</p>}
         <div className="divide-y divide-line">
           {items?.map((n) => (
-            <button key={n.url} onClick={() => open(n)} className="block w-full py-4 text-left">
-              <span className="block font-semibold leading-snug">{n.title}</span>
-              <span className="hint">{n.date && new Date(n.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+            <button key={n.url} onClick={() => open(n)} className="flex w-full items-center gap-3 py-4 text-left">
+              <span className="min-w-0 flex-1">
+                <span className="block font-semibold leading-snug">{n.title}</span>
+                <span className="hint">{n.date && new Date(n.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+              </span>
+              {n.image && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={n.image} alt="" loading="lazy" className="h-16 w-20 shrink-0 rounded-lg bg-surface-2 object-cover" />
+              )}
             </button>
           ))}
         </div>
@@ -140,6 +149,10 @@ export default function Reading({ lang, onBack }: { lang: Lang; onBack: () => vo
         }
       >
         <article lang={lang} className="space-y-4 pt-2 text-lg leading-relaxed">
+          {image && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={image} alt="" className="aspect-video w-full rounded-xl bg-surface-2 object-cover" />
+          )}
           {!paras && <p className="text-muted">Carregando a notícia…</p>}
           {paras && [news!.title, ...paras].map((p, i) => (
             <p key={i} className={i === 0 ? 'font-display text-2xl font-bold leading-tight' : ''}>
