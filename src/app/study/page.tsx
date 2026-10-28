@@ -30,7 +30,7 @@ function Study() {
   const params = useSearchParams();
   const deckId = params.get('deck');
   const extra = params.get('extra') as 'starred' | 'ahead' | null;
-  const { decks, global, settingsFor, session } = useApp();
+  const { decks, global, settingsFor, session, saveGlobal } = useApp();
   const [queue, setQueue] = useState<Entry[] | null>(null);
   const [revealed, setRevealed] = useState(false);
   const [suggested, setSuggested] = useState<{ r: Grade; why: string } | null>(null);
@@ -39,6 +39,8 @@ function Study() {
   const [toast, setToast] = useState<string | null>(null);
   const [leech, setLeech] = useState<Entry | null>(null);
   const [explain, setExplain] = useState<string | null>(null);
+  // Errou/difícil antes de ver a resposta: mostra a resposta e espera "Continuar".
+  const [pending, setPending] = useState<Grade | null>(null);
   const shownAt = useRef(Date.now());
   const startedAt = useRef(Date.now());
   const [elapsed, setElapsed] = useState(0);
@@ -67,6 +69,7 @@ function Study() {
   useEffect(() => {
     shownAt.current = Date.now();
     setRevealed(false);
+    setPending(null);
     setSuggested(null);
     setExplain(null);
   }, [current?.item.id, current?.type]);
@@ -126,17 +129,32 @@ function Study() {
     [current, intervals, upsertCard, session, s.leechThreshold, s.leechAction],
   );
 
-  // Atalhos: espaço revela, 1–4 avaliam.
+  /** Avalia direto. Se errou/difícil sem ter visto a resposta, mostra antes de seguir. */
+  const answer = useCallback(
+    (r: Grade) => {
+      if (!revealed && r <= Rating.Hard) {
+        setRevealed(true);
+        setPending(r);
+      } else grade(r);
+    },
+    [revealed, grade],
+  );
+
+  // Atalhos: espaço revela/continua, 1–4 avaliam.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tagName === 'TEXTAREA') return;
-      if (e.code === 'Space' && !revealed) { e.preventDefault(); setRevealed(true); }
+      if (e.code === 'Space') {
+        e.preventDefault();
+        if (pending) grade(pending);
+        else setRevealed(true);
+      }
       const g = GRADES.find((x) => x.key === e.key);
-      if (g && revealed) grade(g.r);
+      if (g && !pending) answer(g.r);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [revealed, grade]);
+  }, [pending, grade, answer]);
 
   async function action(kind: 'star' | 'more' | 'less' | 'suspend' | 'bury' | 'reset' | 'note') {
     if (!current) return;
@@ -214,6 +232,9 @@ function Study() {
         <span className="text-sm font-semibold text-muted">
           {sessionSettings.sessionMode === 'time' ? `${Math.max(0, sessionSettings.sessionMinutes * 60 - elapsed) / 60 | 0}:${String(Math.max(0, sessionSettings.sessionMinutes * 60 - elapsed) % 60).padStart(2, '0')}` : queue.length}
         </span>
+        <button className="text-lg" onClick={() => saveGlobal({ audioOn: !global.audioOn })} aria-label={global.audioOn ? 'Desligar áudio' : 'Ligar áudio'}>
+          {global.audioOn ? '🔊' : '🔇'}
+        </button>
         <button className="relative text-xl" onClick={() => setMenu(!menu)} aria-label="Opções do card">⋯</button>
       </div>
 
@@ -240,20 +261,20 @@ function Study() {
 
       {explain && <div className="card whitespace-pre-wrap p-4 text-sm">✨ {explain}</div>}
 
-      {revealed ? (
+      {pending ? (
+        <button className="btn-primary w-full" onClick={() => grade(pending)}>Continuar</button>
+      ) : (
         <>
           {suggested && <p className="text-center text-sm text-muted">{suggested.why}: sugerimos <b>{GRADES.find((g) => g.r === suggested.r)?.label}</b></p>}
           <div className="grid grid-cols-4 gap-2">
             {GRADES.map((g) => (
-              <button key={g.r} onClick={() => grade(g.r)} className={`btn flex-col gap-0.5 px-1 py-2.5 ${g.cls} ${suggested?.r === g.r ? 'ring-2 ring-current' : ''}`}>
+              <button key={g.r} onClick={() => answer(g.r)} className={`btn flex-col gap-0.5 px-1 py-2.5 ${g.cls} ${suggested?.r === g.r ? 'ring-2 ring-current' : ''}`}>
                 <span>{g.label}</span>
                 <span className="text-xs font-medium opacity-80">{intervals && formatInterval(intervals[g.r].due)}</span>
               </button>
             ))}
           </div>
         </>
-      ) : (
-        <button className="btn-primary w-full" onClick={() => setRevealed(true)}>Mostrar resposta</button>
       )}
 
       {leech && (

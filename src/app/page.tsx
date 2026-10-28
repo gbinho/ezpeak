@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useApp } from '@/lib/app-context';
 import { buildQueue, startOfToday } from '@/lib/queue';
-import { PRESETS } from '@/lib/settings';
+import LanguagePicker from '@/components/LanguagePicker';
 import { supabase } from '@/lib/supabase';
 import type { Deck } from '@/lib/types';
 
@@ -53,7 +53,7 @@ export default function Home() {
     })();
   }, []);
 
-  if (!global.onboarded) return <Onboarding />;
+  if (!global.languages.length) return <LanguagePicker />;
 
   const goal = global.dailyGoalMinutes;
   const pending = counts ? counts.due + counts.fresh : null;
@@ -146,47 +146,5 @@ function DeckSection({ title, decks, stats, disabled, onToggle }: { title: strin
         );
       })}
     </section>
-  );
-}
-
-function Onboarding() {
-  const { saveGlobal } = useApp();
-  const [lang, setLang] = useState<'en' | 'ja'>('en');
-  const [preset, setPreset] = useState('padrao');
-  const [goal, setGoal] = useState(10);
-  return (
-    <div className="space-y-6 pb-8">
-      <h1 className="font-display text-3xl font-extrabold">Bem-vindo! Vamos configurar.</h1>
-      <div className="space-y-2">
-        <p className="label">O que você quer aprender?</p>
-        <div className="grid grid-cols-2 gap-2">
-          {(['en', 'ja'] as const).map((l) => (
-            <button key={l} onClick={() => setLang(l)} className={`card p-4 text-left ${lang === l ? 'border-accent ring-2 ring-accent' : ''}`}>
-              <div className="text-3xl">{l === 'en' ? '🇺🇸' : '🇯🇵'}</div>
-              <div className="font-semibold">{l === 'en' ? 'Inglês' : 'Japonês'}</div>
-            </button>
-          ))}
-        </div>
-      </div>
-      <div className="space-y-2">
-        <p className="label">Qual ritmo?</p>
-        {PRESETS.map((p) => (
-          <button key={p.id} onClick={() => setPreset(p.id)} className={`card w-full p-3 text-left ${preset === p.id ? 'border-accent ring-2 ring-accent' : ''}`}>
-            <div className="font-semibold">{p.name}</div>
-            <div className="text-sm text-muted">{p.desc}</div>
-          </button>
-        ))}
-      </div>
-      <div className="space-y-2">
-        <p className="label">Meta diária: {goal} minutos</p>
-        <input type="range" min={5} max={60} step={5} value={goal} onChange={(e) => setGoal(+e.target.value)} className="w-full accent-[var(--accent)]" />
-      </div>
-      <button
-        className="btn-primary w-full"
-        onClick={() => saveGlobal({ language: lang, dailyGoalMinutes: goal, onboarded: true, ...PRESETS.find((p) => p.id === preset)!.values })}
-      >
-        Começar
-      </button>
-    </div>
   );
 }

@@ -8,6 +8,7 @@ export function applicableTypes(item: Item, deck: Deck, s: Settings): CardType[]
   return CARD_TYPES.filter((t) => {
     if (!s.cardTypes[t]) return false;
     if (t === 'reading') return deck.language === 'ja';
+    if (t === 'listening') return s.audioOn;
     if (t === 'cloze') return !!item.example && item.example.toLowerCase().includes(item.text_original.toLowerCase());
     return true;
   });

@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 import { useApp } from '@/lib/app-context';
+import { LANG_LABEL } from '@/lib/settings';
 import Login from './Login';
 
 const NAV = [
@@ -24,7 +25,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
   if (loading) return <div className="grid min-h-dvh place-items-center text-muted">Carregando…</div>;
   if (!session) return <Login />;
 
-  const studying = path.startsWith('/study');
+  const studying = path.startsWith('/study') || !global.languages.length;
 
   return (
     <div className="mx-auto flex min-h-dvh max-w-2xl flex-col">
@@ -33,17 +34,19 @@ export default function Shell({ children }: { children: React.ReactNode }) {
           <Link href="/" className="font-display text-xl font-extrabold tracking-tight">
             ez<span className="text-accent">peak</span>
           </Link>
-          <div className="flex rounded-full border border-line bg-surface p-1 text-sm font-semibold">
-            {(['en', 'ja'] as const).map((l) => (
-              <button
-                key={l}
-                onClick={() => saveGlobal({ language: l })}
-                className={`rounded-full px-3 py-1 transition ${global.language === l ? 'bg-accent text-accent-ink' : 'text-muted'}`}
-              >
-                {l === 'en' ? '🇺🇸 Inglês' : '🇯🇵 Japonês'}
-              </button>
-            ))}
-          </div>
+          {global.languages.length > 1 && (
+            <div className="flex rounded-full border border-line bg-surface p-1 text-sm font-semibold">
+              {global.languages.map((l) => (
+                <button
+                  key={l}
+                  onClick={() => saveGlobal({ language: l })}
+                  className={`rounded-full px-3 py-1 transition ${global.language === l ? 'bg-accent text-accent-ink' : 'text-muted'}`}
+                >
+                  {LANG_LABEL[l]}
+                </button>
+              ))}
+            </div>
+          )}
         </header>
       )}
       <main className={`flex-1 px-4 ${studying ? 'py-3' : 'pt-5 pb-28'}`}>{children}</main>

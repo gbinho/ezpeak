@@ -24,6 +24,7 @@ export type Settings = {
   cardTypes: Record<CardType, boolean>;
   typeAnswer: boolean;
   // Exibição
+  audioOn: boolean;
   autoplay: 'front' | 'back' | 'never';
   audioRate: number;
   crutch: 'auto' | 'always' | 'tap' | 'never';
@@ -41,16 +42,32 @@ export type Settings = {
   dailyGoalMinutes: number;
 };
 
+export type Level = 'zero' | 'basic' | 'intermediate' | 'advanced';
+
+export const LEVELS: { id: Level; name: string; desc: string; values: Partial<Settings> }[] = [
+  { id: 'zero', name: 'Do zero', desc: 'Nunca estudei.', values: { newPerDay: 5, crutch: 'always' } },
+  { id: 'basic', name: 'Básico', desc: 'Sei palavras soltas e frases simples.', values: { newPerDay: 10, crutch: 'auto', crutchAfter: 3 } },
+  { id: 'intermediate', name: 'Intermediário', desc: 'Entendo conversas simples.', values: { newPerDay: 15, crutch: 'tap' } },
+  { id: 'advanced', name: 'Avançado', desc: 'Converso com alguma facilidade.', values: { newPerDay: 20, crutch: 'never' } },
+];
+
 export type GlobalSettings = Settings & {
   language: Lang;
+  languages: Lang[];
+  levels: Partial<Record<Lang, Level>>;
   disabledDecks: string[];
   onboarded: boolean;
 };
 
+export const LANG_LABEL: Record<Lang, string> = { en: '🇺🇸 Inglês', ja: '🇯🇵 Japonês' };
+
 export const DEFAULTS: GlobalSettings = {
   language: 'en',
+  languages: [],
+  levels: {},
   disabledDecks: [],
   onboarded: false,
+  audioOn: true,
   newPerDay: 10,
   maxReviewsPerDay: 150,
   newOrder: 'sequential',

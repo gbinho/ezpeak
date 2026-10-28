@@ -28,13 +28,13 @@ export default function Flashcard({ entry, s, revealed, onReveal, onSuggest }: P
     setTyped('');
     setPeek(false);
     const autoFront = s.autoplay === 'front' && ['recognition', 'listening', 'pronunciation', 'cloze'].includes(type);
-    if (autoFront) speak(type === 'cloze' ? item.example ?? item.text_original : item.text_original, lang, s.audioRate);
-  }, [item.id, type, lang, s.autoplay, s.audioRate, item.example, item.text_original]);
+    if (s.audioOn && autoFront) speak(type === 'cloze' ? item.example ?? item.text_original : item.text_original, lang, s.audioRate);
+  }, [item.id, type, lang, s.audioOn, s.autoplay, s.audioRate, item.example, item.text_original]);
 
   useEffect(() => {
-    if (revealed && (s.autoplay === 'back' || (s.autoplay === 'front' && (type === 'production' || type === 'reading'))))
+    if (s.audioOn && revealed && (s.autoplay === 'back' || (s.autoplay === 'front' && (type === 'production' || type === 'reading'))))
       speak(item.text_original, lang, s.audioRate);
-  }, [revealed, s.autoplay, s.audioRate, type, item.text_original, lang]);
+  }, [revealed, s.audioOn, s.autoplay, s.audioRate, type, item.text_original, lang]);
 
   // Muleta: quando mostrar a pronúncia literal na frente do card.
   const reps = uc?.reps ?? 0;
@@ -147,7 +147,7 @@ export default function Flashcard({ entry, s, revealed, onReveal, onSuggest }: P
           {uc?.note && <p className="rounded-xl bg-warn-soft p-3 text-left text-sm">📝 {uc.note}</p>}
         </div>
       ) : (
-        type !== 'pronunciation' && !typeBox && <p className="text-center text-sm text-muted">Toque para ver a resposta</p>
+        type !== 'pronunciation' && !typeBox && <p className="text-center text-xs text-muted">Toque no card para ver a resposta</p>
       )}
     </div>
   );

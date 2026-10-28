@@ -37,22 +37,27 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return () => sub.subscription.unsubscribe();
   }, []);
 
+  // Depende só do id: a renovação do token ao voltar para a aba não pode recarregar o app.
+  const userId = session?.user.id;
   useEffect(() => {
     (async () => {
-      if (!session) {
+      if (!userId) {
         setLoading(false);
         return;
       }
       setLoading(true);
       const { data } = await supabase.from('user_settings').select('*').maybeSingle();
       if (data) {
-        setGlobal({ ...DEFAULTS, ...data.global, cardTypes: { ...DEFAULTS.cardTypes, ...data.global?.cardTypes } });
+        const g = { ...DEFAULTS, ...data.global, cardTypes: { ...DEFAULTS.cardTypes, ...data.global?.cardTypes } };
+        // Contas antigas: o idioma ativo vira o primeiro idioma da lista.
+        if (g.onboarded && !g.languages.length) g.languages = [g.language];
+        setGlobal(g);
         setDeckOverrides(data.decks ?? {});
       }
       await reloadDecks();
       setLoading(false);
     })();
-  }, [session, reloadDecks]);
+  }, [userId, reloadDecks]);
 
   const persist = useCallback(
     async (g: GlobalSettings, d: Record<string, Partial<Settings>>) => {
