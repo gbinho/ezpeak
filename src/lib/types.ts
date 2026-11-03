@@ -38,6 +38,7 @@ export type Item = {
   example_pt: string | null;
   sort_order: number;
   owner_id: string | null;
+  created_at: string;
 };
 
 export type UserCard = {

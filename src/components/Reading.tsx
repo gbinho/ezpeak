@@ -3,7 +3,7 @@ import { Pause, Play, Volume2, VolumeX } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { callAI } from '@/lib/ai';
 import { useApp } from '@/lib/app-context';
-import { personalDeckId, wordsToCards } from '@/lib/personal-deck';
+import { wordsToCards } from '@/lib/personal-deck';
 import { canRecognize, makeUtterance, recognize, speak } from '@/lib/speech';
 import { toPt } from '@/lib/translate';
 import { useTrack } from '@/lib/track';
@@ -31,7 +31,7 @@ function tokens(text: string, lang: Lang) {
 }
 
 export default function Reading({ lang, onBack }: { lang: Lang; onBack: () => void }) {
-  const { session, global, saveGlobal } = useApp();
+  const { session, global, saveGlobal, reloadDecks } = useApp();
   useTrack('reading');
   const [step, setStep] = useState<Step>('list');
   const [items, setItems] = useState<News[] | null>(null);
@@ -129,13 +129,14 @@ export default function Reading({ lang, onBack }: { lang: Lang; onBack: () => vo
 
   const toggle = (w: string) => {
     const k = w.toLowerCase();
-    const next = new Set(marked);
-    if (next.has(k)) next.delete(k);
-    else {
-      next.add(k);
-      if (global.tapAudio && !playing) speak(w, lang, 0.85);
-    }
-    setMarked(next);
+    // Atualização funcional: toques rápidos seguidos não se perdem.
+    setMarked((prev) => {
+      const next = new Set(prev);
+      if (next.has(k)) next.delete(k);
+      else next.add(k);
+      return next;
+    });
+    if (!marked.has(k) && global.tapAudio && !playing) speak(w, lang, 0.85);
   };
 
   async function evaluate() {
@@ -149,11 +150,11 @@ export default function Reading({ lang, onBack }: { lang: Lang; onBack: () => vo
   }
 
   async function makeCards() {
-    if (!session) return;
-    const words = [...marked].slice(0, 15);
+    if (!session || !marked.size || cards) return;
+    const words = [...marked];
     setCards({ done: 0, total: words.length });
-    await personalDeckId(session.user.id, lang);
-    await wordsToCards(session.user.id, lang, words, text, (n) => setCards({ done: n, total: words.length }));
+    await wordsToCards(session.user.id, lang, words, (n) => setCards({ done: n, total: words.length }));
+    reloadDecks();
   }
 
   async function speakSummary() {
@@ -204,7 +205,7 @@ export default function Reading({ lang, onBack }: { lang: Lang; onBack: () => vo
     return (
       <Activity
         title={marked.size ? `${marked.size} palavras grifadas` : 'Toque nas palavras que não entendeu'}
-        onBack={() => { pause(); idx.current = 0; setCur(null); setStep('list'); setMarked(new Set()); setListened(false); }}
+        onBack={() => { if (session && marked.size && !cards) wordsToCards(session.user.id, lang, [...marked]).then(reloadDecks); pause(); idx.current = 0; setCur(null); setStep('list'); setMarked(new Set()); setListened(false); }}
         action={
           <button
             onClick={() => saveGlobal({ tapAudio: !global.tapAudio })}
@@ -223,7 +224,7 @@ export default function Reading({ lang, onBack }: { lang: Lang; onBack: () => vo
             <button onClick={() => { setSlow(!slow); if (playing) { pause(); setTimeout(play, 50); } }} className={`btn-ghost shrink-0 px-3 text-sm tabular-nums ${slow ? 'text-accent' : ''}`} aria-label="Velocidade">
               {slow ? '0.75×' : '1×'}
             </button>
-            <button className="btn-primary flex-1" disabled={!paras} onClick={() => { pause(); setStep('rate'); }}>Terminei</button>
+            <button className="btn-primary flex-1" disabled={!paras} onClick={() => { pause(); makeCards(); setStep('rate'); }}>Terminei</button>
           </div>
         }
       >
@@ -330,7 +331,7 @@ export default function Reading({ lang, onBack }: { lang: Lang; onBack: () => vo
             <p className="text-sm font-semibold">{marked.size} palavras grifadas</p>
             <div className="flex flex-wrap gap-1.5">{[...marked].map((w) => <span key={w} className="rounded-md bg-warn/30 px-2 py-0.5 text-sm">{w}</span>)}</div>
             <button className="btn-primary w-full" disabled={!!cards} onClick={makeCards}>
-              {!cards ? 'Criar cards com essas palavras' : cards.done < cards.total ? `Criando… ${cards.done}/${cards.total}` : `${cards.done} cards em Minhas palavras`}
+              {!cards ? 'Salvar palavras' : cards.done < cards.total ? `Salvando… ${cards.done}/${cards.total}` : `${cards.done} palavras salvas para praticar`}
             </button>
           </section>
         )}

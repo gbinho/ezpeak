@@ -34,7 +34,7 @@ type Opts = {
   decks: Deck[];
   settingsFor: (deckId?: string) => Settings;
   session: Settings;
-  extra?: 'starred' | 'ahead' | null;
+  extra?: 'starred' | 'ahead' | 'recent' | null;
 };
 
 export async function buildQueue({ decks, settingsFor, session, extra }: Opts): Promise<{ entries: Entry[]; counts: { due: number; fresh: number } }> {
@@ -55,6 +55,13 @@ export async function buildQueue({ decks, settingsFor, session, extra }: Opts): 
   const itemById = new Map(allItems.map((i) => [i.id, i]));
   const now = Date.now();
   const learnAhead = now + 20 * 60000;
+
+  // Palavras recentes: as últimas adicionadas, sem limite diário.
+  if (extra === 'recent') {
+    const newest = [...allItems].sort((a, b) => (a.created_at < b.created_at ? 1 : -1)).slice(0, session.sessionSize);
+    const entries = newest.map((item) => ({ item, type: 'recognition' as const, uc: ucByKey.get(key(item.id, 'recognition')) ?? null, deck: deckById[item.deck_id] }));
+    return { entries, counts: { due: entries.length, fresh: 0 } };
+  }
 
   // Revisão extra: não mexe no limite diário.
   if (extra) {

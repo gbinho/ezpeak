@@ -27,7 +27,7 @@ function tokens(text: string, lang: Lang) {
 }
 
 export default function Music({ lang, onBack }: { lang: Lang; onBack: () => void }) {
-  const { session, global, saveGlobal } = useApp();
+  const { session, global, saveGlobal, reloadDecks } = useApp();
   useTrack('music');
   const [q, setQ] = useState('');
   const [songs, setSongs] = useState<Song[] | null>(null);
@@ -127,13 +127,14 @@ export default function Music({ lang, onBack }: { lang: Lang; onBack: () => void
 
   const toggle = (w: string) => {
     const k = w.toLowerCase();
-    const next = new Set(marked);
-    if (next.has(k)) next.delete(k);
-    else {
-      next.add(k);
-      if (global.tapAudio && !playing) speak(w, lang, 0.85);
-    }
-    setMarked(next);
+    // Atualização funcional: toques rápidos seguidos não se perdem.
+    setMarked((prev) => {
+      const next = new Set(prev);
+      if (next.has(k)) next.delete(k);
+      else next.add(k);
+      return next;
+    });
+    if (!marked.has(k) && global.tapAudio && !playing) speak(w, lang, 0.85);
   };
 
   // ---------- busca ----------
@@ -162,7 +163,17 @@ export default function Music({ lang, onBack }: { lang: Lang; onBack: () => void
       </Activity>
     );
 
-  const back = () => { pause(); setSong(null); };
+  async function makeCards() {
+    if (!session || !marked.size || cards) return;
+    const words = [...marked];
+    setCards({ done: 0, total: words.length });
+    await wordsToCards(session.user.id, lang, words, (n) => setCards({ done: n, total: words.length }));
+    reloadDecks();
+  }
+  const saveQuietly = () => {
+    if (session && marked.size && !cards) wordsToCards(session.user.id, lang, [...marked]).then(reloadDecks);
+  };
+  const back = () => { saveQuietly(); pause(); setSong(null); };
 
   /** Próxima música: outra do mesmo artista se houver; senão, qualquer uma da busca. */
   async function next() {
@@ -178,6 +189,7 @@ export default function Music({ lang, onBack }: { lang: Lang; onBack: () => void
     const same = pool.filter((s) => s.artist === song.artist);
     const from = same.length ? same : pool;
     if (!from.length) return;
+    saveQuietly();
     pause();
     open(from[Math.floor(Math.random() * from.length)]);
   }
@@ -194,13 +206,9 @@ export default function Music({ lang, onBack }: { lang: Lang; onBack: () => void
               <button
                 className="btn-primary w-full"
                 disabled={!!cards}
-                onClick={async () => {
-                  const words = [...marked].slice(0, 15);
-                  setCards({ done: 0, total: words.length });
-                  await wordsToCards(session!.user.id, lang, words, lines.map((l) => l.text).join(' '), (n) => setCards({ done: n, total: words.length }));
-                }}
+                onClick={makeCards}
               >
-                {!cards ? 'Criar cards com essas palavras' : cards.done < cards.total ? `Criando… ${cards.done}/${cards.total}` : `${cards.done} cards em Minhas palavras`}
+                {!cards ? 'Salvar palavras' : cards.done < cards.total ? `Salvando… ${cards.done}/${cards.total}` : `${cards.done} palavras salvas para praticar`}
               </button>
             </section>
           ) : (
@@ -247,7 +255,7 @@ export default function Music({ lang, onBack }: { lang: Lang; onBack: () => void
             <button onClick={next} className="btn-ghost shrink-0" aria-label="Próxima música" title="Próxima música">
               <SkipForward className="h-5 w-5" />
             </button>
-            <button className="btn-primary flex-1" onClick={() => { pause(); setDone(true); }}>Terminei</button>
+            <button className="btn-primary flex-1" onClick={() => { pause(); makeCards(); setDone(true); }}>Terminei</button>
           </div>
           </>
         )

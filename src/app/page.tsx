@@ -22,9 +22,11 @@ export default function Home() {
   const [counts, setCounts] = useState<{ due: number; fresh: number } | null>(null);
   const [byDay, setByDay] = useState<Map<string, number>>(new Map());
   const [deckStats, setDeckStats] = useState<Record<string, Stat>>({});
+  const [recent, setRecent] = useState<{ id: string; text_original: string; translation_pt: string }[]>([]);
 
   const langDecks = decks.filter((d) => d.language === global.language);
-  const added = langDecks.filter((d) => isDeckAdded(global, d.id));
+  const personal = langDecks.find((d) => d.owner_id);
+  const added = langDecks.filter((d) => d.owner_id || isDeckAdded(global, d.id));
   const addedKey = added.map((d) => d.id).join();
 
   useEffect(() => {
@@ -33,6 +35,11 @@ export default function Home() {
     buildQueue({ decks: added, settingsFor, session: { ...settingsFor(), sessionMode: 'time' } }).then((r) => setCounts(r.counts));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [addedKey]);
+
+  useEffect(() => {
+    if (!personal?.id) return setRecent([]);
+    supabase.from('items').select('id,text_original,translation_pt').eq('deck_id', personal.id).order('created_at', { ascending: false }).limit(5).then(({ data }) => setRecent(data ?? []));
+  }, [personal?.id]);
 
   useEffect(() => {
     (async () => {
@@ -74,13 +81,13 @@ export default function Home() {
     const s = deckStats[deck.id];
     return !!s && s.total > 0 && s.seen >= s.total;
   };
-  const studying = added.filter((x) => !done(x));
-  const completed = added.filter(done);
+  const studying = added.filter((x) => !x.owner_id && !done(x));
+  const completed = added.filter((x) => !x.owner_id && done(x));
   const userRank = ['intermediate', 'advanced'].includes(global.levels[global.language] ?? '') ? 2 : 1;
   const isChallenge = (deck: Deck) => (deck.level === 'A2' ? 2 : 1) > userRank;
-  const next = langDecks.filter((x) => !isDeckAdded(global, x.id)).sort((a, b) => Number(isChallenge(a)) - Number(isChallenge(b)) || a.sort_order - b.sort_order);
+  const next = langDecks.filter((x) => !x.owner_id && !isDeckAdded(global, x.id)).sort((a, b) => Number(isChallenge(a)) - Number(isChallenge(b)) || a.sort_order - b.sort_order);
 
-  const addDeck = (deck: Deck) => saveGlobal({ addedDecks: [...added.map((x) => x.id), ...(global.addedDecks ?? []).filter((id) => !langDecks.some((x) => x.id === id)), deck.id] });
+  const addDeck = (deck: Deck) => saveGlobal({ addedDecks: [...added.filter((x) => !x.owner_id).map((x) => x.id), ...(global.addedDecks ?? []).filter((id) => !langDecks.some((x) => x.id === id)), deck.id] });
   const pending = counts ? counts.due + counts.fresh : null;
 
   return (
@@ -94,6 +101,18 @@ export default function Home() {
         </div>
         <Week byDay={byDay} streak={streak} />
       </section>
+
+      {personal && recent.length > 0 && (
+        <Section title="Suas palavras" action={<Link href={`/decks/${personal.id}`} className="text-sm font-semibold text-muted">Ver todas ({deckStats[personal.id]?.total ?? recent.length})</Link>}>
+          {recent.map((w) => (
+            <div key={w.id} className="flex items-baseline justify-between gap-3 px-4 py-2.5">
+              <span className="truncate font-semibold">{w.text_original}</span>
+              <span className="truncate text-sm text-muted">{w.translation_pt}</span>
+            </div>
+          ))}
+          <Link href={`/study?deck=${personal.id}&extra=recent`} className="block px-4 py-3 text-center font-semibold text-accent">Praticar</Link>
+        </Section>
+      )}
 
       <Section title="Estudando" action={<Link href="/create" className="flex items-center gap-1 text-sm font-semibold text-accent"><Plus className="h-4 w-4" />Card</Link>}>
         {studying.length ? studying.map((x) => <DeckRow key={x.id} deck={x} stat={deckStats[x.id]} right={<Link href={`/study?deck=${x.id}`} className="text-sm font-semibold text-accent">Estudar</Link>} />) : <p className="px-4 py-5 text-sm text-muted">Adicione um deck abaixo para começar.</p>}

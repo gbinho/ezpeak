@@ -1,5 +1,5 @@
-import { callAI } from './ai';
 import { supabase } from './supabase';
+import { lookup } from './translate';
 import type { Lang } from './types';
 
 /** Deck "Minhas palavras" do usuário no idioma; cria se não existir. */
@@ -14,31 +14,33 @@ export async function personalDeckId(userId: string, lang: Lang) {
   return created!.id as string;
 }
 
-const MYMEMORY_LANG: Record<Lang, string> = { en: 'en', ja: 'ja', ru: 'ru', fr: 'fr' };
-
 /**
- * Cria cards para palavras soltas. Usa a IA local; sem ela, traduz pelo MyMemory (grátis)
- * e usa a própria palavra como pronúncia, que a pessoa pode editar depois.
+ * Cria cards para palavras grifadas. Não depende da IA: traduz pelo Google Tradutor.
+ * Palavras repetidas são ignoradas. Devolve quantas foram processadas.
  */
-export async function wordsToCards(userId: string, lang: Lang, words: string[], context: string, onStep?: (n: number) => void) {
+export async function wordsToCards(userId: string, lang: Lang, words: string[], onStep?: (n: number) => void) {
   const deckId = await personalDeckId(userId, lang);
+  const { data } = await supabase.from('items').select('text_original').eq('deck_id', deckId);
+  const known = new Set((data ?? []).map((i) => i.text_original.toLowerCase()));
   let n = 0;
   for (const word of words) {
-    let row: Record<string, unknown> | null = null;
-    try {
-      row = await callAI<Record<string, unknown>>('generate', { word: `${word} (no contexto: "${context.slice(0, 160)}")`, language: lang });
-    } catch {
-      try {
-        const r = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(word)}&langpair=${MYMEMORY_LANG[lang]}|pt-br`).then((x) => x.json());
-        row = { text_original: word, translation_pt: r.responseData?.translatedText ?? '?', respelling_pt: word, kind: 'word' };
-      } catch {
-        row = null;
-      }
+    if (!known.has(word.toLowerCase())) {
+      const { pt, roman } = await lookup(word, lang);
+      if (!pt) continue;
+      // Russo e japonês: romanização. Inglês e francês: o Google devolve IPA, então usa a própria palavra.
+      const latin = lang === 'ja' || lang === 'ru' ? roman : null;
+      await supabase.from('items').insert({
+        deck_id: deckId,
+        owner_id: userId,
+        kind: 'word',
+        text_original: word,
+        text_romanized: latin,
+        translation_pt: pt,
+        respelling_pt: latin ?? word,
+        sort_order: Date.now() % 1e9,
+      });
     }
-    if (row?.text_original) {
-      await supabase.from('items').insert({ ...row, deck_id: deckId, owner_id: userId, sort_order: Date.now() % 1e9 });
-      onStep?.(++n);
-    }
+    onStep?.(++n);
   }
   return n;
 }

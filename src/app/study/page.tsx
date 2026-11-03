@@ -30,7 +30,7 @@ export default function StudyPage() {
 function Study() {
   const params = useSearchParams();
   const deckId = params.get('deck');
-  const extra = params.get('extra') as 'starred' | 'ahead' | null;
+  const extra = params.get('extra') as 'starred' | 'ahead' | 'recent' | null;
   const { decks, global, settingsFor, session, saveGlobal } = useApp();
   const [queue, setQueue] = useState<Entry[] | null>(null);
   const [revealed, setRevealed] = useState(false);
@@ -48,7 +48,7 @@ function Study() {
 
   const sessionSettings = settingsFor(deckId ?? undefined);
   const activeDecks = useMemo(
-    () => decks.filter((d) => (deckId ? d.id === deckId : d.language === global.language && isDeckAdded(global, d.id))),
+    () => decks.filter((d) => (deckId ? d.id === deckId : d.language === global.language && (!!d.owner_id || isDeckAdded(global, d.id)))),
     [decks, deckId, global],
   );
 
@@ -131,15 +131,25 @@ function Study() {
   );
 
   /** Avalia direto. Se errou/difícil sem ter visto a resposta, mostra antes de seguir. */
+  /**
+   * Avalia. Se a resposta ainda não apareceu, vira a carta primeiro para mostrar a tradução:
+   * Bom/Fácil seguem sozinhos em seguida; Não conheço/Difícil esperam "Continuar".
+   */
+  const autoNext = useRef<ReturnType<typeof setTimeout> | null>(null);
   const answer = useCallback(
     (r: Grade) => {
-      if (!revealed && r <= Rating.Hard) {
-        setRevealed(true);
-        setPending(r);
-      } else grade(r);
+      if (revealed) return grade(r);
+      setRevealed(true);
+      setPending(r);
+      if (r >= Rating.Good) autoNext.current = setTimeout(() => grade(r), 1600);
     },
     [revealed, grade],
   );
+  const continueNow = (r: Grade) => {
+    if (autoNext.current) clearTimeout(autoNext.current);
+    grade(r);
+  };
+  useEffect(() => () => { if (autoNext.current) clearTimeout(autoNext.current); }, [current?.item.id, current?.type]);
 
   // Atalhos: espaço revela/continua, 1–4 avaliam.
   useEffect(() => {
@@ -147,7 +157,7 @@ function Study() {
       if ((e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tagName === 'TEXTAREA') return;
       if (e.code === 'Space') {
         e.preventDefault();
-        if (pending) grade(pending);
+        if (pending) continueNow(pending);
         else setRevealed(true);
       }
       const g = GRADES.find((x) => x.key === e.key);
@@ -263,14 +273,14 @@ function Study() {
       {explain && <div className="card whitespace-pre-wrap p-4 text-sm">✨ {explain}</div>}
 
       {pending ? (
-        <button className="btn-primary w-full" onClick={() => grade(pending)}>Continuar</button>
+        <button className="btn-primary w-full" onClick={() => continueNow(pending)}>{pending >= Rating.Good ? 'Próximo' : 'Continuar'}</button>
       ) : (
         <>
           {suggested && <p className="text-center text-sm text-muted">{suggested.why}: sugerimos <b>{GRADES.find((g) => g.r === suggested.r)?.label}</b></p>}
           <div className="grid grid-cols-4 gap-2">
             {GRADES.map((g) => (
               <button key={g.r} onClick={() => answer(g.r)} className={`btn flex-col gap-0.5 px-1 py-2.5 ${g.cls} ${suggested?.r === g.r ? 'ring-2 ring-current' : ''}`}>
-                <span>{g.label}</span>
+                <span>{g.r === Rating.Again && !current.uc ? 'Não conheço' : g.label}</span>
                 <span className="text-xs font-medium opacity-80">{intervals && formatInterval(intervals[g.r].due)}</span>
               </button>
             ))}

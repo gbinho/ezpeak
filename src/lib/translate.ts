@@ -13,3 +13,15 @@ export async function toPt(texts: string[]): Promise<(string | null)[]> {
     return texts.map(() => null);
   }
 }
+
+/** Tradução e romanização (russo, japonês) de uma palavra. */
+export async function lookup(word: string, lang: string): Promise<{ pt: string | null; roman: string | null }> {
+  try {
+    const r = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=${lang}&tl=pt&dt=t&dt=rm&q=${encodeURIComponent(word)}`);
+    const j = (await r.json()) as (string | null)[][][];
+    const parts = j[0];
+    return { pt: parts[0]?.[0] ?? null, roman: parts.find((p) => p[0] == null)?.[3] ?? null };
+  } catch {
+    return { pt: null, roman: null };
+  }
+}

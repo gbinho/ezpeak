@@ -121,34 +121,46 @@ export default function Flashcard({ entry, s, revealed, onReveal, onSuggest }: P
     }
   }
 
-  return (
-    <div onClick={() => !revealed && type !== 'pronunciation' && !typeBox && onReveal()} className="card flex min-h-[420px] cursor-pointer flex-col p-5 select-none">
-      <div className="flex items-center justify-between">
-        <span className="chip">{CARD_TYPE_LABEL[type]}</span>
-        <span className="chip">{deck.title}</span>
-      </div>
-      <div className="flex flex-1 flex-col justify-center gap-4 py-6">{front}</div>
+  const face = 'card flex flex-col p-5 [grid-area:1/1] [backface-visibility:hidden]';
+  const chips = (
+    <div className="flex items-center justify-between">
+      <span className="chip">{CARD_TYPE_LABEL[type]}</span>
+      <span className="chip">{deck.title}</span>
+    </div>
+  );
 
-      {revealed ? (
-        <div className="space-y-3 border-t border-dashed border-line pt-4 text-center">
-          {type !== 'recognition' && type !== 'pronunciation' && original}
-          {type !== 'production' && <div className="font-display text-2xl font-bold">{item.translation_pt}</div>}
-          {type === 'production' && <div className="text-muted">{item.translation_pt}</div>}
-          {type !== 'pronunciation' && <div><Respelling text={item.respelling_pt} size="xl" /></div>}
-          {typed && <p className="text-sm text-muted">Você digitou: <b className="text-ink">{typed}</b></p>}
-          <AudioBar item={item} lang={lang} rate={s.audioRate} />
-          {item.tip_pt && <p className="rounded-xl bg-blue-soft p-3 text-left text-sm">💡 {item.tip_pt}</p>}
-          {item.example && type !== 'cloze' && (
-            <div className="rounded-xl bg-surface-2 p-3 text-left text-sm">
-              <div className="flex items-center gap-2"><b>{item.example}</b><button className="text-accent" onClick={(e) => { e.stopPropagation(); speak(item.example!, lang, s.audioRate); }}>🔊</button></div>
-              <div className="text-muted">{item.example_pt}</div>
-            </div>
-          )}
-          {uc?.note && <p className="rounded-xl bg-warn-soft p-3 text-left text-sm">📝 {uc.note}</p>}
+  // Carta que vira: frente e verso ocupam a mesma célula; o verso começa girado 180°.
+  return (
+    <div className="[perspective:1200px]">
+      <div
+        onClick={() => !revealed && type !== 'pronunciation' && !typeBox && onReveal()}
+        className={`grid min-h-[420px] cursor-pointer transition-transform duration-500 ease-out select-none [transform-style:preserve-3d] motion-reduce:transition-none ${revealed ? '[transform:rotateY(180deg)]' : ''}`}
+      >
+        <div className={`${face} ${revealed ? 'pointer-events-none' : ''}`} aria-hidden={revealed}>
+          {chips}
+          <div className="flex flex-1 flex-col justify-center gap-4 py-6">{front}</div>
+          {type !== 'pronunciation' && !typeBox && <p className="text-center text-xs text-muted">Toque no card para ver a resposta</p>}
         </div>
-      ) : (
-        type !== 'pronunciation' && !typeBox && <p className="text-center text-xs text-muted">Toque no card para ver a resposta</p>
-      )}
+
+        <div className={`${face} [transform:rotateY(180deg)] ${revealed ? '' : 'pointer-events-none'}`} aria-hidden={!revealed}>
+          {chips}
+          <div className="flex flex-1 flex-col justify-center gap-3 py-4 text-center">
+            {original}
+            <div className="font-display text-3xl font-bold text-accent">{item.translation_pt}</div>
+            <div><Respelling text={item.respelling_pt} size="lg" /></div>
+            {typed && <p className="text-sm text-muted">Você digitou: <b className="text-ink">{typed}</b></p>}
+            <AudioBar item={item} lang={lang} rate={s.audioRate} />
+            {item.tip_pt && <p className="rounded-xl bg-blue-soft p-3 text-left text-sm">{item.tip_pt}</p>}
+            {item.example && type !== 'cloze' && (
+              <div className="rounded-xl bg-surface-2 p-3 text-left text-sm">
+                <button className="font-semibold underline decoration-dotted underline-offset-4" onClick={(e) => { e.stopPropagation(); speak(item.example!, lang, s.audioRate); }}>{item.example}</button>
+                <div className="text-muted">{item.example_pt}</div>
+              </div>
+            )}
+            {uc?.note && <p className="rounded-xl bg-warn-soft p-3 text-left text-sm">{uc.note}</p>}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
